@@ -1,17 +1,8 @@
 import { getCookie } from "h3";
 import prisma from "./prisma";
-import jwt from "jsonwebtoken";
+import { betterAuth } from "better-auth";
 
-const JWT_SECRET = "super-secret-for-practice";
-
-export async function getUserFromEvent(event) {
-  const token = getCookie(event, "auth_token");
-  if (!token) return null;
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as { id: number };
-    const user = await prisma.user.findUnique({ where: { id: payload.id } });
-    return user;
-  } catch {
-    return null;
-  }
-}
+export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET,
+  //...
+});
