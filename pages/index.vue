@@ -168,14 +168,21 @@ async function saveNote(note: NoteType) {
 
       <!-- Block editor for new note -->
       <div v-for="block in newNote.content" :key="block.id" class="mb-2">
-        <select v-model="block.type" class="border rounded px-2 py-1 mb-1">
-          <option value="paragraph">Paragraph</option>
-          <option value="list">List</option>
+        <select
+          v-model="block.type"
+          class="border-2 border-gray-500 rounded-2xl px-2 py-1 mb-3"
+        >
+          <option id="paragraph" class="dark:text-gray-200" value="paragraph">
+            Paragraph
+          </option>
+          <option id="list" class="dark:text-gray-200" value="list">
+            List
+          </option>
         </select>
         <textarea
           v-model="block.text"
           rows="2"
-          class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y"
+          class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y h-32"
           placeholder="Write here..."
         ></textarea>
       </div>
@@ -264,15 +271,23 @@ async function saveNote(note: NoteType) {
               <div v-for="block in note.content" :key="block.id" class="mb-2">
                 <select
                   v-model="block.type"
-                  class="border rounded px-2 py-1 mb-1"
+                  class="border-2 rounded-2xl border-gray-500 px-2 py-1 mb-1"
                 >
-                  <option value="paragraph">Paragraph</option>
-                  <option value="list">List</option>
+                  <option
+                    class="dark:text-gray-200"
+                    id="paragraph"
+                    value="paragraph"
+                  >
+                    Paragraph
+                  </option>
+                  <option class="dark:text-gray-200" id="list" value="list">
+                    List
+                  </option>
                 </select>
                 <textarea
                   v-model="block.text"
                   rows="2"
-                  class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y"
+                  class="border-2 border-gray-500 rounded-2xl px-3 w-full h-32 resize-y"
                   placeholder="Write here..."
                 ></textarea>
               </div>

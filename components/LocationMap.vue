@@ -130,7 +130,7 @@ onUnmounted(() => {
 <template>
   <div class="space-y-2 relative">
     <!-- Add Location button -->
-    <div v-if="!showSearch">
+    <div v-if="!showSearch && !props.modelValue?.latitude">
       <button
         @click="openSearch"
         class="px-3 py-1 bg-gray-800 text-white rounded hover:bg-cyan-500"
@@ -157,7 +157,7 @@ onUnmounted(() => {
         </div>
         <button
           @click="openSearch"
-          class="mt-2 px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+          class="mt-2 px-2 py-1 bg-gray-800 text-white rounded hover:bg-cyan-500 text-sm"
         >
           Change Location
         </button>
@@ -175,7 +175,7 @@ onUnmounted(() => {
 
         <button
           @click="closeSearch"
-          class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+          class="px-2 py-1 bg-red-800 text-white rounded hover:bg-red-600 text-sm"
         >
           ✕
         </button>
