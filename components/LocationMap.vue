@@ -48,16 +48,27 @@ async function fetchSuggestions(val: string) {
   abortController = new AbortController();
 
   loading.value = true;
+
   try {
+    const userLongitude = props.modelValue?.longitude ?? -101.831;
+    const userLatitude = props.modelValue?.latitude ?? 35.221;
+
     const res = await fetch(
-      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+      `/api/places?q=${encodeURIComponent(
         val
-      )}.json?access_token=${config.public.mapboxToken}&limit=10`,
+      )}&lat=${userLatitude}&lng=${userLongitude}`,
       { signal: abortController.signal }
     );
 
     const data = await res.json();
-    suggestions.value = data.features || [];
+
+    // Map Google results to your suggestion format
+    suggestions.value = (data.results || []).map((place: any) => ({
+      place_name:
+        place.name +
+        (place.formatted_address ? ", " + place.formatted_address : ""),
+      center: [place.geometry.location.lng, place.geometry.location.lat],
+    }));
   } catch (err: any) {
     if (err.name !== "AbortError") {
       console.error("Failed to fetch suggestions", err);

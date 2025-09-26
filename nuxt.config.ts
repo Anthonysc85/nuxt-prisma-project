@@ -18,6 +18,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       mapboxToken: process.env.MAPBOX_TOKEN,
+      googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || "",
     },
   },
 });
