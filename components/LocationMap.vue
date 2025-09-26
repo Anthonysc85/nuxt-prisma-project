@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, nextTick } from "vue";
+import { ref, watch } from "vue";
 import { useRuntimeConfig } from "#app";
+import { useDebounceFn } from "@vueuse/core";
 
 const config = useRuntimeConfig();
 
@@ -22,45 +23,62 @@ const emit = defineEmits<{
 const showSearch = ref(false);
 const search = ref("");
 const suggestions = ref<
-  Array<{ display_name: string; lat: string; lon: string }>
+  Array<{ place_name: string; center: [number, number] }>
 >([]);
+const loading = ref(false);
 
-// Show search input
+let abortController: AbortController | null = null;
+
 function openSearch() {
   showSearch.value = true;
 }
 
-// Fetch autocomplete suggestions from Nominatim
-async function fetchSuggestions() {
-  if (!search.value) {
+async function fetchSuggestions(val: string) {
+  if (!val) {
     suggestions.value = [];
     return;
   }
 
+  if (abortController) abortController.abort(); // cancel previous
+  abortController = new AbortController();
+
+  loading.value = true;
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-        search.value
-      )}&limit=5`
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+        val
+      )}.json?access_token=${config.public.mapboxToken}&limit=10`,
+      { signal: abortController.signal }
     );
+
     const data = await res.json();
-    suggestions.value = data;
-  } catch (err) {
-    console.error("Failed to fetch suggestions", err);
+    suggestions.value = data.features || [];
+  } catch (err: any) {
+    if (err.name !== "AbortError") {
+      console.error("Failed to fetch suggestions", err);
+    }
+  } finally {
+    loading.value = false;
   }
 }
 
-// User selects a suggestion
-function selectSuggestion(s: {
-  display_name: string;
-  lat: string;
-  lon: string;
-}) {
-  const latitude = Number(s.lat);
-  const longitude = Number(s.lon);
+// debounce user typing
+const debouncedFetch = useDebounceFn(fetchSuggestions, 300);
 
-  emit("update:modelValue", { latitude, longitude, address: s.display_name });
-  search.value = s.display_name;
+watch(search, (val) => {
+  debouncedFetch(val);
+});
+
+function selectSuggestion(s: { place_name: string; center: [number, number] }) {
+  const [longitude, latitude] = s.center;
+
+  emit("update:modelValue", {
+    latitude,
+    longitude,
+    address: s.place_name,
+  });
+
+  search.value = s.place_name;
   suggestions.value = [];
 }
 </script>
@@ -71,7 +89,7 @@ function selectSuggestion(s: {
     <button
       v-if="!showSearch"
       @click="openSearch"
-      class="px-3 py-1 bg-gray-800 text-white rounded hover:bg-blue-600"
+      class="px-3 py-1 bg-gray-800 text-white rounded hover:bg-cyan-500"
     >
       Add Location
     </button>
@@ -81,10 +99,16 @@ function selectSuggestion(s: {
       <div class="relative">
         <input
           v-model="search"
-          @input="fetchSuggestions"
           placeholder="Search location"
-          class="border px-2 py-1 rounded w-full"
+          class="border-3 rounded-2xl border-gray-500 px-2 py-1 w-full"
         />
+
+        <div
+          v-if="loading"
+          class="absolute right-2 top-2 text-xs text-gray-500"
+        >
+          Loading…
+        </div>
 
         <!-- Autocomplete suggestions -->
         <ul
@@ -93,11 +117,11 @@ function selectSuggestion(s: {
         >
           <li
             v-for="s in suggestions"
-            :key="s.lat + s.lon"
+            :key="s.place_name"
             @click="selectSuggestion(s)"
             class="px-2 py-1 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
           >
-            {{ s.display_name }}
+            {{ s.place_name }}
           </li>
         </ul>
       </div>
@@ -118,7 +142,7 @@ function selectSuggestion(s: {
           </div>
         </div>
       </div>
-      <div v-else class="border p-2 text-red-500">
+      <div v-else class="border p-2 text-red-800">
         Location preview will appear here
       </div>
     </div>

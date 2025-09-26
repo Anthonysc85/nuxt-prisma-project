@@ -13,10 +13,16 @@ interface LocationType {
   address: string;
 }
 
+interface NoteBlock {
+  id: number;
+  type: "paragraph" | "list";
+  text: string;
+}
+
 interface NoteType {
   id: number;
   title: string;
-  content: string;
+  content: NoteBlock[];
   createdAt: string;
   location: LocationType | null;
 }
@@ -25,7 +31,7 @@ interface NoteType {
 const notes = ref<NoteType[]>([]);
 const newNote = ref<Pick<NoteType, "title" | "content">>({
   title: "",
-  content: "",
+  content: [{ id: Date.now(), type: "paragraph", text: "" }],
 });
 const newNoteLocation = ref<LocationType | null>(null);
 const editingId = ref<number | null>(null);
@@ -34,17 +40,35 @@ const editingId = ref<number | null>(null);
 async function loadNotes() {
   try {
     const data = await $fetch("/api/notes");
-    notes.value = data.map((note: any) => ({
-      ...note,
-      location:
-        note.latitude != null && note.longitude != null
-          ? {
-              latitude: note.latitude,
-              longitude: note.longitude,
-              address: note.address,
-            }
-          : { latitude: 0, longitude: 0, address: "" }, // initialize
-    }));
+    notes.value = data.map((note: any) => {
+      let parsedContent: NoteBlock[] = [];
+
+      try {
+        parsedContent = JSON.parse(note.content);
+        if (!Array.isArray(parsedContent)) {
+          parsedContent = [
+            { id: Date.now(), type: "paragraph", text: String(parsedContent) },
+          ];
+        }
+      } catch {
+        parsedContent = note.content
+          ? [{ id: Date.now(), type: "paragraph", text: note.content }]
+          : [];
+      }
+
+      return {
+        ...note,
+        content: parsedContent,
+        location:
+          note.latitude != null && note.longitude != null
+            ? {
+                latitude: note.latitude,
+                longitude: note.longitude,
+                address: note.address,
+              }
+            : { latitude: 0, longitude: 0, address: "" },
+      };
+    });
   } catch (err) {
     console.error("Failed to load notes:", err);
   }
@@ -61,7 +85,7 @@ async function addNote() {
     method: "POST",
     body: {
       title: newNote.value.title,
-      content: newNote.value.content,
+      content: JSON.stringify(newNote.value.content),
       latitude: newNoteLocation.value?.latitude ?? null,
       longitude: newNoteLocation.value?.longitude ?? null,
       address: newNoteLocation.value?.address ?? null,
@@ -69,13 +93,15 @@ async function addNote() {
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  newNote.value = { title: "", content: "" };
+  newNote.value = {
+    title: "",
+    content: [{ id: Date.now(), type: "paragraph", text: "" }],
+  };
   newNoteLocation.value = null;
   await loadNotes();
 }
 
 // --- Update note ---
-
 async function updateNote(note: NoteType) {
   try {
     const token = localStorage.getItem("token");
@@ -84,7 +110,7 @@ async function updateNote(note: NoteType) {
       method: "PUT",
       body: {
         title: note.title,
-        content: note.content,
+        content: JSON.stringify(note.content),
         latitude: note.location?.latitude ?? null,
         longitude: note.location?.longitude ?? null,
         address: note.location?.address ?? null,
@@ -139,17 +165,35 @@ async function saveNote(note: NoteType) {
         placeholder="Title"
         class="border-2 border-gray-500 rounded-2xl h-8 px-3 w-1/2"
       />
-      <textarea
-        v-model="newNote.content"
-        placeholder="Content"
-        class="border-2 border-gray-500 rounded-2xl px-3 h-56 w-full resize-y"
-      ></textarea>
+
+      <!-- Block editor for new note -->
+      <div v-for="block in newNote.content" :key="block.id" class="mb-2">
+        <select v-model="block.type" class="border rounded px-2 py-1 mb-1">
+          <option value="paragraph">Paragraph</option>
+          <option value="list">List</option>
+        </select>
+        <textarea
+          v-model="block.text"
+          rows="2"
+          class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y"
+          placeholder="Write here..."
+        ></textarea>
+      </div>
+      <button
+        type="button"
+        @click="
+          newNote.content.push({ id: Date.now(), type: 'paragraph', text: '' })
+        "
+        class="px-3 py-1 bg-green-600 text-white rounded w-fit"
+      >
+        + Add Block
+      </button>
 
       <Location v-model="newNoteLocation" />
 
       <button
         type="submit"
-        class="px-4 py-2 w-fit bg-green-500 text-white rounded hover:bg-green-600"
+        class="px-4 py-2 w-fit bg-cyan-500/50 text-white rounded hover:bg-cyan-500"
       >
         Add Note
       </button>
@@ -176,18 +220,33 @@ async function saveNote(note: NoteType) {
             <!-- View mode -->
             <div v-if="editingId !== note.id">
               <h3 class="font-semibold text-lg mb-2">{{ note.title }}</h3>
-              <p class="text-gray-700 whitespace-pre-wrap">
-                {{ note.content }}
-              </p>
+
+              <!-- Render blocks -->
+              <div v-for="block in note.content" :key="block.id" class="mb-2">
+                <p
+                  v-if="block.type === 'paragraph'"
+                  class="whitespace-pre-wrap"
+                >
+                  {{ block.text }}
+                </p>
+                <ul
+                  v-else-if="block.type === 'list'"
+                  class="list-disc list-inside"
+                >
+                  <li v-for="(item, i) in block.text.split('\n')" :key="i">
+                    {{ item }}
+                  </li>
+                </ul>
+              </div>
 
               <!-- Map preview -->
-              <div v-if="note.location" class="mt-2">
+              <div v-if="note.location && note.location.address" class="mt-2">
                 <img
                   class="w-1/2 h-48 border rounded object-cover"
                   :src="`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${note.location.longitude},${note.location.latitude})/${note.location.longitude},${note.location.latitude},14/600x400?access_token=${config.public.mapboxToken}`"
                   alt="Location map"
                 />
-                <div class="text-sm text-gray-700 mt-1">
+                <div class="text-sm text-gray-700 dark:text-gray-200 mt-1">
                   📍 {{ note.location.address }}
                 </div>
               </div>
@@ -200,12 +259,36 @@ async function saveNote(note: NoteType) {
                 placeholder="Title"
                 class="border-2 border-gray-500 rounded-2xl h-8 px-3 w-full"
               />
-              <textarea
-                v-model="note.content"
-                placeholder="Content"
-                class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y"
-                rows="3"
-              ></textarea>
+
+              <!-- Block editor -->
+              <div v-for="block in note.content" :key="block.id" class="mb-2">
+                <select
+                  v-model="block.type"
+                  class="border rounded px-2 py-1 mb-1"
+                >
+                  <option value="paragraph">Paragraph</option>
+                  <option value="list">List</option>
+                </select>
+                <textarea
+                  v-model="block.text"
+                  rows="2"
+                  class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y"
+                  placeholder="Write here..."
+                ></textarea>
+              </div>
+              <button
+                type="button"
+                @click="
+                  note.content.push({
+                    id: Date.now(),
+                    type: 'paragraph',
+                    text: '',
+                  })
+                "
+                class="px-3 py-1 bg-green-600 text-white rounded"
+              >
+                + Add Block
+              </button>
 
               <Location v-model="note.location" />
 
@@ -213,7 +296,7 @@ async function saveNote(note: NoteType) {
                 <button
                   type="button"
                   @click="saveNote(note)"
-                  class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  class="px-3 py-1 bg-cyan-500/50 text-white rounded hover:bg-cyan-500"
                 >
                   Save
                 </button>
