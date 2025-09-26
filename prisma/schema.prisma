@@ -21,5 +21,9 @@ model Note {
   createdAt DateTime @default(now())
   userId    Int      // now required
   user      User?    @relation(fields: [userId], references: [id])
+
+  latitude Float?
+  longitude Float?
+  address  String?
 }
 

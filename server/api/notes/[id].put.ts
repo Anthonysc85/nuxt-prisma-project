@@ -4,10 +4,17 @@ export default defineEventHandler(async (event) => {
   const id = Number(event.context.params?.id);
   const body = await readBody(event);
 
-  // Hardcode default user
-  const updatedNote = await prisma.note.updateMany({
-    where: { id, userId: 1 }, // only updates note with userId 1
-    data: { title: body.title, content: body.content },
+  // Update the note and return the updated record
+  const updatedNote = await prisma.note.update({
+    where: { id },
+    data: {
+      title: body.title,
+      content: body.content,
+      latitude: body.latitude ?? null,
+      longitude: body.longitude ?? null,
+      address: body.address ?? null,
+      // If you want to restrict by user, add userId check manually
+    },
   });
 
   return updatedNote;
