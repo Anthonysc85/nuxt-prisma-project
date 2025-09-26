@@ -6,7 +6,6 @@ import Location from "../components/LocationMap.vue";
 
 const config = useRuntimeConfig();
 
-// --- Types ---
 interface LocationType {
   latitude: number;
   longitude: number;
@@ -27,7 +26,6 @@ interface NoteType {
   location: LocationType | null;
 }
 
-// --- Refs ---
 const notes = ref<NoteType[]>([]);
 const newNote = ref<Pick<NoteType, "title" | "content">>({
   title: "",
@@ -36,7 +34,6 @@ const newNote = ref<Pick<NoteType, "title" | "content">>({
 const newNoteLocation = ref<LocationType | null>(null);
 const editingId = ref<number | null>(null);
 
-// --- Load notes from API ---
 async function loadNotes() {
   try {
     const data = await $fetch("/api/notes");
@@ -74,10 +71,8 @@ async function loadNotes() {
   }
 }
 
-// Initial load
 loadNotes();
 
-// --- Add note ---
 async function addNote() {
   const token = localStorage.getItem("token");
 
@@ -101,7 +96,6 @@ async function addNote() {
   await loadNotes();
 }
 
-// --- Update note ---
 async function updateNote(note: NoteType) {
   try {
     const token = localStorage.getItem("token");
@@ -124,7 +118,6 @@ async function updateNote(note: NoteType) {
   }
 }
 
-// --- Delete note ---
 async function deleteNote(note: NoteType) {
   try {
     const token = localStorage.getItem("token");
@@ -138,7 +131,6 @@ async function deleteNote(note: NoteType) {
   }
 }
 
-// --- Editing helpers ---
 function startEditing(noteId: number) {
   editingId.value = noteId;
 }
@@ -153,11 +145,9 @@ async function saveNote(note: NoteType) {
   editingId.value = null;
 }
 
-// --- Block management ---
 function deleteBlock(content: NoteBlock[], blockId: number) {
   const index = content.findIndex((block) => block.id === blockId);
   if (index !== -1 && content.length > 1) {
-    // Keep at least one block
     content.splice(index, 1);
   }
 }
@@ -171,7 +161,6 @@ function addBlock(content: NoteBlock[]) {
   <div class="px-4 py-6 dark:bg-gray-950 dark:text-gray-200">
     <h1 class="pb-4 text-4xl font-semibold">Notes</h1>
 
-    <!-- Add New Note -->
     <form @submit.prevent="addNote" class="flex flex-col gap-3 mb-6">
       <input
         v-model="newNote.title"
@@ -179,7 +168,6 @@ function addBlock(content: NoteBlock[]) {
         class="border-2 border-gray-500 rounded-2xl h-8 px-3 w-1/2"
       />
 
-      <!-- Block editor for new note -->
       <div
         v-for="block in newNote.content"
         :key="block.id"
@@ -228,9 +216,7 @@ function addBlock(content: NoteBlock[]) {
       >
         + Add Block
       </button>
-
       <Location v-model="newNoteLocation" />
-
       <button
         type="submit"
         class="px-4 py-2 w-fit bg-cyan-500/50 text-white rounded hover:bg-cyan-500"
@@ -239,7 +225,6 @@ function addBlock(content: NoteBlock[]) {
       </button>
     </form>
 
-    <!-- Notes List -->
     <ul class="gap-4 flex flex-col">
       <li
         v-for="note in notes"

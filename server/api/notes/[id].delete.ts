@@ -5,11 +5,10 @@ export default defineEventHandler(async (event) => {
 
   try {
     const deletedNote = await prisma.note.delete({
-      where: { id }, // only delete the specific note
+      where: { id },
     });
-    return deletedNote; // returns the deleted note
+    return deletedNote;
   } catch (err) {
-    // If note doesn't exist or userId check fails
     return { error: "Note not found or cannot delete" };
   }
 });
