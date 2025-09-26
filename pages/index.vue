@@ -152,6 +152,19 @@ async function saveNote(note: NoteType) {
   await updateNote(note);
   editingId.value = null;
 }
+
+// --- Block management ---
+function deleteBlock(content: NoteBlock[], blockId: number) {
+  const index = content.findIndex((block) => block.id === blockId);
+  if (index !== -1 && content.length > 1) {
+    // Keep at least one block
+    content.splice(index, 1);
+  }
+}
+
+function addBlock(content: NoteBlock[]) {
+  content.push({ id: Date.now(), type: "paragraph", text: "" });
+}
 </script>
 
 <template>
@@ -167,30 +180,50 @@ async function saveNote(note: NoteType) {
       />
 
       <!-- Block editor for new note -->
-      <div v-for="block in newNote.content" :key="block.id" class="mb-2">
-        <select
-          v-model="block.type"
-          class="border-2 border-gray-500 rounded-2xl px-2 py-1 mb-3"
-        >
-          <option id="paragraph" class="dark:text-gray-200" value="paragraph">
-            Paragraph
-          </option>
-          <option id="list" class="dark:text-gray-200" value="list">
-            List
-          </option>
-        </select>
-        <textarea
-          v-model="block.text"
-          rows="2"
-          class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y h-32"
-          placeholder="Write here..."
-        ></textarea>
+      <div
+        v-for="block in newNote.content"
+        :key="block.id"
+        class="mb-2 relative group"
+      >
+        <div class="flex items-start gap-2">
+          <div class="flex-1">
+            <select
+              v-model="block.type"
+              class="border-2 border-gray-500 rounded-2xl px-2 py-1 mb-3"
+            >
+              <option
+                id="paragraph"
+                class="dark:text-gray-200"
+                value="paragraph"
+              >
+                Paragraph
+              </option>
+              <option id="list" class="dark:text-gray-200" value="list">
+                List
+              </option>
+            </select>
+            <textarea
+              v-model="block.text"
+              rows="2"
+              class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y h-32"
+              placeholder="Write here..."
+            ></textarea>
+          </div>
+          <!-- Delete block button (appears on hover) -->
+          <button
+            v-if="newNote.content.length > 1"
+            type="button"
+            @click="deleteBlock(newNote.content, block.id)"
+            class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-8 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
+            title="Delete block"
+          >
+            ✕
+          </button>
+        </div>
       </div>
       <button
         type="button"
-        @click="
-          newNote.content.push({ id: Date.now(), type: 'paragraph', text: '' })
-        "
+        @click="addBlock(newNote.content)"
         class="px-3 py-1 bg-green-600 text-white rounded w-fit"
       >
         + Add Block
@@ -268,38 +301,50 @@ async function saveNote(note: NoteType) {
               />
 
               <!-- Block editor -->
-              <div v-for="block in note.content" :key="block.id" class="mb-2">
-                <select
-                  v-model="block.type"
-                  class="border-2 rounded-2xl border-gray-500 px-2 py-1 mb-1"
-                >
-                  <option
-                    class="dark:text-gray-200"
-                    id="paragraph"
-                    value="paragraph"
+              <div
+                v-for="block in note.content"
+                :key="block.id"
+                class="mb-2 relative group"
+              >
+                <div class="flex items-start gap-2">
+                  <div class="flex-1">
+                    <select
+                      v-model="block.type"
+                      class="border-2 rounded-2xl border-gray-500 px-2 py-1 mb-1"
+                    >
+                      <option
+                        class="dark:text-gray-200"
+                        id="paragraph"
+                        value="paragraph"
+                      >
+                        Paragraph
+                      </option>
+                      <option class="dark:text-gray-200" id="list" value="list">
+                        List
+                      </option>
+                    </select>
+                    <textarea
+                      v-model="block.text"
+                      rows="2"
+                      class="border-2 border-gray-500 rounded-2xl px-3 w-full h-32 resize-y"
+                      placeholder="Write here..."
+                    ></textarea>
+                  </div>
+                  <!-- Delete block button (appears on hover) -->
+                  <button
+                    v-if="note.content.length > 1"
+                    type="button"
+                    @click="deleteBlock(note.content, block.id)"
+                    class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-6 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                    title="Delete block"
                   >
-                    Paragraph
-                  </option>
-                  <option class="dark:text-gray-200" id="list" value="list">
-                    List
-                  </option>
-                </select>
-                <textarea
-                  v-model="block.text"
-                  rows="2"
-                  class="border-2 border-gray-500 rounded-2xl px-3 w-full h-32 resize-y"
-                  placeholder="Write here..."
-                ></textarea>
+                    ✕
+                  </button>
+                </div>
               </div>
               <button
                 type="button"
-                @click="
-                  note.content.push({
-                    id: Date.now(),
-                    type: 'paragraph',
-                    text: '',
-                  })
-                "
+                @click="addBlock(note.content)"
                 class="px-3 py-1 bg-green-600 text-white rounded"
               >
                 + Add Block
