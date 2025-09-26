@@ -71,7 +71,7 @@ function selectSuggestion(s: {
     <button
       v-if="!showSearch"
       @click="openSearch"
-      class="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+      class="px-3 py-1 bg-gray-800 text-white rounded hover:bg-blue-600"
     >
       Add Location
     </button>
@@ -107,14 +107,19 @@ function selectSuggestion(s: {
         v-if="props.modelValue?.latitude && props.modelValue.longitude"
         class="mt-2"
       >
-        <img
-          class="w-full h-48 border rounded object-cover"
-          :src="`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${props.modelValue.longitude},${props.modelValue.latitude})/${props.modelValue.longitude},${props.modelValue.latitude},14/400x400?access_token=${config.public.mapboxToken}`"
-          alt="Selected location map"
-        />
-        <div class="text-sm text-gray-700 mt-1">
-          📍 {{ props.modelValue.address }}
+        <div class="w-1/2">
+          <img
+            class="w-full h-48 border rounded object-cover"
+            :src="`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${props.modelValue.longitude},${props.modelValue.latitude})/${props.modelValue.longitude},${props.modelValue.latitude},14/400x400?access_token=${config.public.mapboxToken}`"
+            alt="Selected location map"
+          />
+          <div class="text-sm text-gray-700 mt-1">
+            📍 {{ props.modelValue.address }}
+          </div>
         </div>
+      </div>
+      <div v-else class="border p-2 text-red-500">
+        Location preview will appear here
       </div>
     </div>
   </div>

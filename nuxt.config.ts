@@ -8,6 +8,12 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   vite: {
     plugins: [tailwindcss()],
+    server: {
+      watch: {
+        usePolling: true, // forces Vite to detect changes reliably
+        interval: 100,
+      },
+    },
   },
   runtimeConfig: {
     public: {

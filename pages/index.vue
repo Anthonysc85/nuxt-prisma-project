@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { useRuntimeConfig } from "#app";
 import { Pencil } from "lucide-vue-next";
-import Location from "../components/Location.vue";
+import Location from "../components/LocationMap.vue";
 
 const config = useRuntimeConfig();
 
@@ -37,13 +37,13 @@ async function loadNotes() {
     notes.value = data.map((note: any) => ({
       ...note,
       location:
-        note.latitude != null && note.longitude != null && note.address
+        note.latitude != null && note.longitude != null
           ? {
               latitude: note.latitude,
               longitude: note.longitude,
               address: note.address,
             }
-          : null,
+          : { latitude: 0, longitude: 0, address: "" }, // initialize
     }));
   } catch (err) {
     console.error("Failed to load notes:", err);
@@ -183,7 +183,7 @@ async function saveNote(note: NoteType) {
               <!-- Map preview -->
               <div v-if="note.location" class="mt-2">
                 <img
-                  class="w-full h-48 border rounded object-cover"
+                  class="w-1/2 h-48 border rounded object-cover"
                   :src="`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${note.location.longitude},${note.location.latitude})/${note.location.longitude},${note.location.latitude},14/600x400?access_token=${config.public.mapboxToken}`"
                   alt="Location map"
                 />
