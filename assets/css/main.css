@@ -4,4 +4,21 @@
 
 @theme {
   --color-black: #030712;
+  --color-cyan: #006076;
+  --color-cinnamon-red: #9b3c41;
+  --color-cream: #f8f8f5;
+  --color-scallop: #d7bca0;
+}
+@layer base {
+  body {
+    @apply bg-white dark:bg-gray-950  overflow-y-auto
+  [&::-webkit-scrollbar]:w-2
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  dark:[&::-webkit-scrollbar-thumb]:border-gray-700
+  dark:[&::-webkit-scrollbar-thumb]:border
+  [&::-webkit-scrollbar-track]:bg-gray-100
+  [&::-webkit-scrollbar-thumb]:bg-gray-300
+  dark:[&::-webkit-scrollbar-track]:bg-gray-950
+  dark:[&::-webkit-scrollbar-thumb]:bg-gray-900;
+  }
 }

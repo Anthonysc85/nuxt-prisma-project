@@ -3,7 +3,7 @@ import { useAuth } from "~/composables/useAuth";
 
 import { ref, watchEffect } from "vue";
 import { useRuntimeConfig } from "#app";
-import { Pencil } from "lucide-vue-next";
+import { Pencil, Plus } from "lucide-vue-next";
 import Location from "../components/LocationMap.vue";
 import VueDraggableNext from "vuedraggable-es";
 
@@ -201,7 +201,7 @@ async function onDragEnd() {
 </script>
 
 <template>
-  <div v-if="session" class="px-4 py-6 dark:bg-gray-950 dark:text-gray-200">
+  <div v-if="session" class="px-4 py-6 dark:text-gray-200">
     <h1 class="pb-4 text-4xl font-semibold">Notes</h1>
 
     <form @submit.prevent="addNote" class="flex flex-col gap-3 mb-6">
@@ -218,21 +218,34 @@ async function onDragEnd() {
       >
         <div class="flex items-start gap-2">
           <div class="flex-1">
-            <select
-              v-model="block.type"
-              class="border-2 border-gray-500 rounded-2xl px-2 py-1 mb-3"
-            >
-              <option
-                id="paragraph"
-                class="dark:text-gray-200"
-                value="paragraph"
+            <div class="relative inline-block w-48 mb-3">
+              <select
+                v-model="block.type"
+                class="block appearance-none w-full border-2 border-gray-500 rounded-2xl px-4 py-1 pr-10 dark:text-gray-200"
               >
-                Paragraph
-              </option>
-              <option id="list" class="dark:text-gray-200" value="list">
-                List
-              </option>
-            </select>
+                <option id="paragraph" value="paragraph">Paragraph</option>
+                <option id="list" value="list">List</option>
+              </select>
+              <!-- Custom chevron -->
+              <div
+                class="pointer-events-none absolute inset-y-0 right-3 flex items-center"
+              >
+                <svg
+                  class="w-5 h-5 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+
             <textarea
               v-model="block.text"
               rows="2"
@@ -245,24 +258,31 @@ async function onDragEnd() {
             v-if="newNote.content.length > 1"
             type="button"
             @click="deleteBlock(newNote.content, block.id)"
-            class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-8 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full"
+            class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-8 p-1 text-cinnamon-red hover:text-red-700 rounded-full"
             title="Delete block"
           >
             ✕
           </button>
         </div>
       </div>
-      <button
-        type="button"
-        @click="addBlock(newNote.content)"
-        class="px-3 py-1 bg-green-600 text-white rounded w-fit"
-      >
-        + Add Block
-      </button>
+      <div class="flex items-center w-full">
+        <div class="flex-grow border-t-2 border-gray-500"></div>
+
+        <button
+          type="button"
+          @click="addBlock(newNote.content)"
+          class="mx-4 px-2 py-1 bg-gray-900 text-white rounded flex items-center gap-1"
+        >
+          <Plus :size="16" />
+        </button>
+
+        <div class="flex-grow border-t-2 border-gray-500"></div>
+      </div>
+
       <Location v-model="newNoteLocation" />
       <button
         type="submit"
-        class="px-4 py-2 w-fit bg-cyan-500/50 text-white rounded hover:bg-cyan-500"
+        class="px-4 py-2 w-fit bg-cyan text-white rounded hover:bg-cyan-500"
       >
         Add Note
       </button>
@@ -279,10 +299,10 @@ async function onDragEnd() {
       <template #item="{ element: note }">
         <li
           :key="note.id"
-          class="rounded-2xl bg-gray-950 border border-gray-700 p-1"
+          class="rounded-2xl bg-gray-200 dark:bg-gray-950 border-white border dark:border-gray-700 p-0.5"
         >
           <div
-            class="flex items-start gap-3 rounded-xl p-4 bg-gray-900 border-white dark:border-gray-700 border"
+            class="flex items-start gap-3 rounded-xl p-4 bg-gray-200 dark:bg-gray-900 border-white dark:border-gray-700 border"
           >
             <!-- Drag handle -->
             <div
@@ -304,7 +324,9 @@ async function onDragEnd() {
             <div class="flex-1">
               <!-- View mode -->
               <div v-if="editingId !== note.id">
-                <h3 class="font-semibold text-lg mb-2 text-gray-200">
+                <h3
+                  class="font-semibold text-lg mb-2 text-gray-950 dark:text-gray-200"
+                >
                   {{ note.title }}
                 </h3>
 
@@ -312,13 +334,13 @@ async function onDragEnd() {
                 <div v-for="block in note.content" :key="block.id" class="mb-2">
                   <p
                     v-if="block.type === 'paragraph'"
-                    class="whitespace-pre-wrap text-gray-200"
+                    class="whitespace-pre-wrap text-gray-950 dark:text-gray-200"
                   >
                     {{ block.text }}
                   </p>
                   <ul
                     v-else-if="block.type === 'list'"
-                    class="list-disc list-inside text-gray-200"
+                    class="list-disc list-inside text-gray-950 dark:text-gray-200"
                   >
                     <li v-for="(item, i) in block.text.split('\n')" :key="i">
                       {{ item }}
@@ -327,13 +349,13 @@ async function onDragEnd() {
                 </div>
 
                 <!-- Map preview -->
-                <div v-if="note.location && note.location.address" class="mt-2">
+                <div v-if="note.location && note.location.address" class="pt-2">
                   <img
                     class="w-1/2 h-48 border rounded object-cover"
                     :src="`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${note.location.longitude},${note.location.latitude})/${note.location.longitude},${note.location.latitude},14/600x400?access_token=${config.public.mapboxToken}`"
                     alt="Location map"
                   />
-                  <div class="text-sm text-gray-200 mt-1">
+                  <div class="text-sm text-dark-950 dark:text-gray-200 mt-1">
                     📍 {{ note.location.address }}
                   </div>
                 </div>
@@ -344,7 +366,7 @@ async function onDragEnd() {
                 <input
                   v-model="note.title"
                   placeholder="Title"
-                  class="border-2 border-gray-500 rounded-2xl h-8 px-3 w-full"
+                  class="border-2 border-gray-500 bg-white dark:bg-gray-950 rounded-2xl h-8 px-3 mb-3 w-full"
                 />
 
                 <!-- Block editor -->
@@ -355,29 +377,39 @@ async function onDragEnd() {
                 >
                   <div class="flex items-start gap-2">
                     <div class="flex-1">
-                      <select
-                        v-model="block.type"
-                        class="border-2 rounded-2xl border-gray-500 px-2 py-1 mb-1"
-                      >
-                        <option
-                          class="dark:text-gray-200"
-                          id="paragraph"
-                          value="paragraph"
+                      <div class="relative inline-block w-48 mb-3">
+                        <select
+                          v-model="block.type"
+                          class="block appearance-none w-full border-2 border-gray-500 rounded-2xl px-4 py-1 pr-10 dark:text-gray-200 bg-white dark:bg-gray-950"
                         >
-                          Paragraph
-                        </option>
-                        <option
-                          class="dark:text-gray-200"
-                          id="list"
-                          value="list"
+                          <option id="paragraph" value="paragraph">
+                            Paragraph
+                          </option>
+                          <option id="list" value="list">List</option>
+                        </select>
+                        <!-- Custom chevron -->
+                        <div
+                          class="pointer-events-none absolute inset-y-0 right-3 flex items-center"
                         >
-                          List
-                        </option>
-                      </select>
+                          <svg
+                            class="w-5 h-5 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
                       <textarea
                         v-model="block.text"
                         rows="2"
-                        class="border-2 border-gray-500 rounded-2xl px-3 w-full h-32 resize-y"
+                        class="border-2 border-gray-500 rounded-2xl px-3 w-full h-32 resize-y bg-white dark:bg-gray-950"
                         placeholder="Write here..."
                       ></textarea>
                     </div>
@@ -386,20 +418,27 @@ async function onDragEnd() {
                       v-if="note.content.length > 1"
                       type="button"
                       @click="deleteBlock(note.content, block.id)"
-                      class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-6 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full"
+                      class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 mt-6 p-1 text-cinnamon-red hover:text-red-700 rounded-full"
                       title="Delete block"
                     >
                       ✕
                     </button>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  @click="addBlock(note.content)"
-                  class="px-3 py-1 bg-green-600 text-white rounded"
-                >
-                  + Add Block
-                </button>
+
+                <div class="flex items-center w-full my-6">
+                  <div class="flex-grow border-t-2 border-gray-500"></div>
+
+                  <button
+                    type="button"
+                    @click="addBlock(note.content)"
+                    class="mx-4 px-2 py-1 bg-gray-950 text-white rounded flex items-center gap-1"
+                  >
+                    <Plus :size="16" />
+                  </button>
+
+                  <div class="flex-grow border-t-2 border-gray-500"></div>
+                </div>
 
                 <Location v-model="note.location" />
 
@@ -407,7 +446,7 @@ async function onDragEnd() {
                   <button
                     type="button"
                     @click="saveNote(note)"
-                    class="px-3 py-1 bg-cyan-500/50 text-white rounded hover:bg-cyan-500"
+                    class="px-3 py-1 bg-cyan text-white rounded hover:bg-cyan-500"
                   >
                     Save
                   </button>
@@ -426,7 +465,7 @@ async function onDragEnd() {
             <button
               type="button"
               @click="deleteNote(note)"
-              class="px-2 py-1 bg-red-800 text-white rounded hover:bg-red-600 self-start"
+              class="px-2 py-1 bg-cinnamon-red text-white rounded hover:bg-red-600 self-start"
             >
               Delete
             </button>

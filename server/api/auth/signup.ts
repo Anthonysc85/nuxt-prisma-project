@@ -30,10 +30,10 @@ export default defineEventHandler(async (event) => {
     const token = crypto.randomUUID();
     await prisma.session.create({
       data: {
-        id: token,
-        token,
+        id: token, // still fine
+        sessionToken: token, // <-- matches your schema
         userId: user.id,
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // <-- renamed
       },
     });
 

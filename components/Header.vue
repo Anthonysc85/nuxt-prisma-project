@@ -24,7 +24,7 @@ const logout = async () => {
 
 <template>
   <div
-    class="bg-gray-800 w-full h-12 flex justify-end items-center px-4 space-x-4"
+    class="bg-gray-900 w-full h-12 flex justify-end items-center px-4 space-x-4"
   >
     <div class="text-gray-200 mr-4">{{ userEmail }}</div>
     <button
