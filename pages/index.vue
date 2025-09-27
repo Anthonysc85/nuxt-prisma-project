@@ -79,7 +79,7 @@ async function loadNotes() {
                   longitude: note.longitude,
                   address: note.address,
                 }
-              : { latitude: 0, longitude: 0, address: "" },
+              : null, // Set to null instead of 0,0
         };
       })
       .sort((a: NoteType, b: NoteType) => a.position - b.position); // Sort by position

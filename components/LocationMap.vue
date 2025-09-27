@@ -50,8 +50,16 @@ async function fetchSuggestions(val: string) {
   loading.value = true;
 
   try {
-    const userLongitude = props.modelValue?.longitude ?? -101.831;
-    const userLatitude = props.modelValue?.latitude ?? 35.221;
+    // Use better fallback coordinates if no location is set
+    // Default to center of US if no location data
+    const userLongitude =
+      props.modelValue?.longitude && props.modelValue.longitude !== 0
+        ? props.modelValue.longitude
+        : -98.5795; // Center of US
+    const userLatitude =
+      props.modelValue?.latitude && props.modelValue.latitude !== 0
+        ? props.modelValue.latitude
+        : 39.8283; // Center of US
 
     const res = await fetch(
       `/api/places?q=${encodeURIComponent(
@@ -61,6 +69,8 @@ async function fetchSuggestions(val: string) {
     );
 
     const data = await res.json();
+
+    console.log("Places API response:", data); // Debug log
 
     // Map Google results to your suggestion format
     suggestions.value = (data.results || []).map((place: any) => ({
