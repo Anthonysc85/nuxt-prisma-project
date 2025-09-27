@@ -1,7 +1,5 @@
-// server/api/auth/session.ts
-import { parse } from "cookie";
 import { PrismaClient } from "@prisma/client";
-import { defineEventHandler } from "h3";
+import { parse } from "cookie";
 
 const prisma = new PrismaClient();
 
@@ -12,7 +10,7 @@ export default defineEventHandler(async (event) => {
   if (!token) return { session: null };
 
   const session = await prisma.session.findUnique({
-    where: { id: token },
+    where: { sessionToken: token }, // must match schema field
     include: { user: true },
   });
 

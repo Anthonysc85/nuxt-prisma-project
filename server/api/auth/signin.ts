@@ -24,10 +24,10 @@ export default defineEventHandler(async (event) => {
   // Store session in DB
   await prisma.session.create({
     data: {
-      id: token,
-      token,
+      id: token, // UUID for session ID
+      sessionToken: token, // matches your Prisma schema
       userId: user.id,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h
     },
   });
 

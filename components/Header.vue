@@ -7,14 +7,14 @@ import UISwitch from "./ui/UISwitch.vue";
 const isDark = useDark();
 const userEmail = ref<string>("");
 
-onMounted(async () => {
-  try {
-    const data = await $fetch("/api/auth/session");
-    userEmail.value = data.email;
-  } catch (err) {
-    console.error("Failed to load user session:", err);
-  }
-});
+// onMounted(async () => {
+//   try {
+//     const data = await $fetch("/api/auth/session");
+//     userEmail.value = data.email;
+//   } catch (err) {
+//     console.error("Failed to load user session:", err);
+//   }
+// });
 
 const logout = async () => {
   await $fetch("/api/auth/signout", { method: "POST" });
