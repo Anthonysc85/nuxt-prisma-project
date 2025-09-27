@@ -229,9 +229,11 @@ function addBlock(content: NoteBlock[]) {
       <li
         v-for="note in notes"
         :key="note.id"
-        class="border border-gray-200 rounded-lg p-4"
+        class="rounded-2xl bg-gray-950 border border-gray-700 p-1"
       >
-        <div class="flex items-start gap-3">
+        <div
+          class="flex items-start gap-3 rounded-xl p-4 bg-gray-900 border-white dark:border-gray-700 border"
+        >
           <!-- Edit button -->
           <button
             @click="startEditing(note.id)"
@@ -244,19 +246,21 @@ function addBlock(content: NoteBlock[]) {
           <div class="flex-1">
             <!-- View mode -->
             <div v-if="editingId !== note.id">
-              <h3 class="font-semibold text-lg mb-2">{{ note.title }}</h3>
+              <h3 class="font-semibold text-lg mb-2 text-gray-200">
+                {{ note.title }}
+              </h3>
 
               <!-- Render blocks -->
               <div v-for="block in note.content" :key="block.id" class="mb-2">
                 <p
                   v-if="block.type === 'paragraph'"
-                  class="whitespace-pre-wrap"
+                  class="whitespace-pre-wrap text-gray-200"
                 >
                   {{ block.text }}
                 </p>
                 <ul
                   v-else-if="block.type === 'list'"
-                  class="list-disc list-inside"
+                  class="list-disc list-inside text-gray-200"
                 >
                   <li v-for="(item, i) in block.text.split('\n')" :key="i">
                     {{ item }}
@@ -271,7 +275,7 @@ function addBlock(content: NoteBlock[]) {
                   :src="`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${note.location.longitude},${note.location.latitude})/${note.location.longitude},${note.location.latitude},14/600x400?access_token=${config.public.mapboxToken}`"
                   alt="Location map"
                 />
-                <div class="text-sm text-gray-700 dark:text-gray-200 mt-1">
+                <div class="text-sm text-gray-200 mt-1">
                   📍 {{ note.location.address }}
                 </div>
               </div>
