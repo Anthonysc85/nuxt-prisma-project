@@ -3,6 +3,7 @@ import { ref } from "vue";
 
 const email = ref("");
 const password = ref("");
+const name = ref(""); // optional, if you want to collect name
 const error = ref("");
 const loading = ref(false);
 
@@ -11,18 +12,21 @@ async function submit() {
   error.value = "";
 
   try {
-    await $fetch("/api/auth/register", {
+    const res: any = await $fetch("/api/auth/signup", {
       method: "POST",
       body: {
         email: email.value,
         password: password.value,
+        name: name.value,
       },
     });
 
+    if (res.error) throw new Error(res.error);
+
     // Registration successful, redirect to notes
-    await navigateTo("/notes");
+    await navigateTo("/");
   } catch (err: any) {
-    error.value = err.data?.message || "Registration failed";
+    error.value = err.message || "Registration failed";
   } finally {
     loading.value = false;
   }

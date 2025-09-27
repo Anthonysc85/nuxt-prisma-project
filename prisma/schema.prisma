@@ -1,17 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
+// -------------------------
+// Notes & Users
+// -------------------------
 model User {
-  id       Int     @id @default(autoincrement())
-  email    String  @unique
-  password String
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?
+  name          String?
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
   notes    Note[]
+  sessions Session[]
+  accounts Account[]
+  // verificationTokens removed
 }
 
 model Note {
@@ -19,12 +31,54 @@ model Note {
   title     String
   content   String
   createdAt DateTime @default(now())
-  userId    Int      // now required
-  user      User?    @relation(fields: [userId], references: [id])
-  position  Int      @default(0) // for ordering notes
+  updatedAt DateTime @updatedAt
 
-  latitude Float?
+  // Location fields
+  address   String?
+  latitude  Float?
   longitude Float?
-  address  String?
+  position  Int      @default(0)
+
+  // Relation to User
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
 
+// -------------------------
+// Better Auth Models
+// -------------------------
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  provider          String
+  providerAccountId String
+  type              String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  @@unique([provider, providerAccountId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

@@ -11,7 +11,7 @@ async function login() {
   error.value = "";
 
   try {
-    await $fetch("/api/auth/login", {
+    const res: any = await $fetch("/api/auth/signin", {
       method: "POST",
       body: {
         email: email.value,
@@ -19,10 +19,12 @@ async function login() {
       },
     });
 
+    if (res.error) throw new Error(res.error);
+
     // Login successful, redirect to notes
-    await navigateTo("/notes");
+    await navigateTo("/");
   } catch (err: any) {
-    error.value = err.data?.message || "Login failed";
+    error.value = err.message || "Login failed";
   } finally {
     loading.value = false;
   }

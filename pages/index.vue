@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { useAuth } from "~/composables/useAuth";
+
+import { ref, watchEffect } from "vue";
 import { useRuntimeConfig } from "#app";
 import { Pencil } from "lucide-vue-next";
 import Location from "../components/LocationMap.vue";
 import VueDraggableNext from "vuedraggable-es";
 
 const config = useRuntimeConfig();
+const { session, loading } = useAuth();
 
 interface LocationType {
   latitude: number;
@@ -28,6 +31,11 @@ interface NoteType {
   position: number;
 }
 
+watchEffect(() => {
+  if (!loading.value && !session.value) {
+    navigateTo("/login");
+  }
+});
 const notes = ref<NoteType[]>([]);
 const newNote = ref<Pick<NoteType, "title" | "content">>({
   title: "",
@@ -193,7 +201,7 @@ async function onDragEnd() {
 </script>
 
 <template>
-  <div class="px-4 py-6 dark:bg-gray-950 dark:text-gray-200">
+  <div v-if="session" class="px-4 py-6 dark:bg-gray-950 dark:text-gray-200">
     <h1 class="pb-4 text-4xl font-semibold">Notes</h1>
 
     <form @submit.prevent="addNote" class="flex flex-col gap-3 mb-6">
@@ -426,5 +434,8 @@ async function onDragEnd() {
         </li>
       </template>
     </VueDraggableNext>
+  </div>
+  <div v-else>
+    <p>Redirecting to login...</p>
   </div>
 </template>

@@ -1,10 +1,23 @@
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-// If your Prisma file is located elsewhere, you can change the path
-import { PrismaClient } from "@/generated/prisma";
-const prisma = new PrismaClient();
-export const auth = betterAuth({
-  database: prismaAdapter(prisma, {
-    provider: "postgresql", // or "mysql", "postgresql", ...etc
-  }),
-});
+import { parse } from "cookie";
+import prisma from "./prisma";
+import { createError } from "h3";
+
+export async function getUserFromEvent(event: any) {
+  const cookies = event.node.req.headers.cookie;
+  if (!cookies)
+    throw createError({ statusCode: 401, statusMessage: "Not authenticated" });
+
+  const { sessionToken } = parse(cookies);
+  if (!sessionToken)
+    throw createError({ statusCode: 401, statusMessage: "Not authenticated" });
+
+  const session = await prisma.session.findUnique({
+    where: { id: sessionToken },
+    include: { user: true },
+  });
+
+  if (!session)
+    throw createError({ statusCode: 401, statusMessage: "Invalid session" });
+
+  return session.user;
+}
