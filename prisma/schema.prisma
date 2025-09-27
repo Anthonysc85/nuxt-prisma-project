@@ -21,6 +21,7 @@ model Note {
   createdAt DateTime @default(now())
   userId    Int      // now required
   user      User?    @relation(fields: [userId], references: [id])
+  position  Int      @default(0) // for ordering notes
 
   latitude Float?
   longitude Float?
