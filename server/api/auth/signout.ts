@@ -1,23 +1,14 @@
-// server/api/auth/signout.ts
-import { parse, serialize } from "cookie";
-import { PrismaClient } from "@prisma/client";
-import { defineEventHandler } from "h3";
-
-const prisma = new PrismaClient();
+import { auth } from "~/auth";
+import { defineEventHandler, readBody } from "h3";
 
 export default defineEventHandler(async (event) => {
-  const cookie = event.node.req.headers.cookie;
-  const token = parse(cookie || "").sessionToken;
+  const body = await readBody(event);
+  const { sessionToken } = body;
 
-  if (token) {
-    await prisma.session.delete({ where: { id: token } });
+  try {
+    await auth.deleteSession(sessionToken);
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Signout failed" };
   }
-
-  // clear cookie
-  event.node.res.setHeader(
-    "Set-Cookie",
-    serialize("sessionToken", "", { path: "/", maxAge: 0 })
-  );
-
-  return { ok: true };
 });

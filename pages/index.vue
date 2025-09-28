@@ -4,7 +4,8 @@ import { useAuth } from "~/composables/useAuth";
 import { ref, watchEffect } from "vue";
 import { useRuntimeConfig } from "#app";
 import { Pencil, Plus } from "lucide-vue-next";
-import Location from "../components/LocationMap.vue";
+import Wysiwyg from "../components/blocks/Wysiwyg.vue";
+import Location from "../components/blocks/LocationMap.vue";
 import VueDraggableNext from "vuedraggable-es";
 
 const config = useRuntimeConfig();
@@ -203,7 +204,6 @@ async function onDragEnd() {
 <template>
   <div v-if="session" class="px-4 py-6 dark:text-gray-200">
     <h1 class="pb-4 text-4xl font-semibold">Notes</h1>
-
     <form @submit.prevent="addNote" class="flex flex-col gap-3 mb-6">
       <input
         v-model="newNote.title"
@@ -301,16 +301,16 @@ async function onDragEnd() {
       v-model="notes"
       @end="onDragEnd"
       handle=".drag-handle"
-      class="gap-4 flex flex-col list-none"
+      class="gap-5 gap-y-8 grid grid-cols-2 list-none"
       :item-key="(note: NoteType) => note.id"
     >
       <template #item="{ element: note }">
         <li
           :key="note.id"
-          class="rounded-2xl bg-gray-200 dark:bg-gray-950 border-white border dark:border-gray-700 p-0.5"
+          class="rounded-2xl bg-gray-200 dark:bg-gray-950 border-white border dark:border-gray-700 p-0.5 h-fit"
         >
           <div
-            class="flex items-start gap-3 rounded-xl p-4 bg-gray-200 dark:bg-gray-900 border-white dark:border-gray-700 border"
+            class="flex items-start gap-3 rounded-xl p-4 bg-gray-200 dark:bg-gray-900 border-white dark:border-gray-700 border h-96 overflow-scroll"
           >
             <!-- Drag handle -->
             <div
@@ -359,7 +359,7 @@ async function onDragEnd() {
                 <!-- Map preview -->
                 <div v-if="note.location && note.location.address" class="pt-2">
                   <img
-                    class="w-1/2 h-48 border rounded object-cover"
+                    class="w-full h-48 border rounded object-cover"
                     :src="`https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000(${note.location.longitude},${note.location.latitude})/${note.location.longitude},${note.location.latitude},14/600x400?access_token=${config.public.mapboxToken}`"
                     alt="Location map"
                   />
