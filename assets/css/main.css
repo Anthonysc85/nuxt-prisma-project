@@ -21,4 +21,6 @@
   dark:[&::-webkit-scrollbar-track]:bg-gray-950
   dark:[&::-webkit-scrollbar-thumb]:bg-gray-900;
   }
+
+  /* no ::-webkit-scrollbar-track styling */
 }

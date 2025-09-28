@@ -172,7 +172,7 @@ function handleInput() {
 
 <template>
   <ToolbarRoot
-    class="flex px-[10px] py-2 w-full !min-w-max rounded-t-lg bg-gray-900 border-t border-x shadow-2xl dark:border-gray-700"
+    class="flex px-[10px] py-2 w-full !min-w-max rounded-t-lg bg-gray-900 border-t-2 border-x-2 shadow-2xl border-slate-400 dark:border-gray-700"
   >
     <ToolbarToggleGroup type="multiple" aria-label="Text formatting">
       <ToolbarToggleItem
@@ -240,7 +240,7 @@ function handleInput() {
   <div
     ref="editor"
     contenteditable="true"
-    class="wysiwyg border-x border-b p-3 min-h-[150px] rounded-b-lg dark:bg-gray-950 dark:border-gray-700"
+    class="wysiwyg border-x-2 border-b-2 p-3 min-h-[150px] rounded-b-lg bg-slate-200 dark:bg-gray-800 border-slate-400 dark:border-gray-700"
     spellcheck="true"
     @input="handleInput"
   ></div>

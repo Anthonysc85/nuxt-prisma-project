@@ -6,6 +6,7 @@ import { useRuntimeConfig } from "#app";
 import { Pencil, Plus } from "lucide-vue-next";
 import Wysiwyg from "../components/blocks/Wysiwyg.vue";
 import Location from "../components/blocks/LocationMap.vue";
+import Calendar from "../components/blocks/Calendar.vue";
 import VueDraggableNext from "vuedraggable-es";
 
 const config = useRuntimeConfig();
@@ -201,12 +202,14 @@ async function onDragEnd() {
 
 <template>
   <div v-if="session" class="px-4 py-6 dark:text-gray-200">
+    <Calendar />
+
     <h1 class="pb-4 text-4xl font-semibold">Notes</h1>
     <form @submit.prevent="addNote" class="flex flex-col gap-3 mb-6">
       <input
         v-model="newNote.title"
         placeholder="Title"
-        class="border-2 border-gray-500 rounded-2xl h-8 px-3 w-1/2 dark:bg-gray-900"
+        class="border-2 border-slate-400 dark:border-gray-700 rounded-2xl h-8 px-3 w-1/2 bg-slate-200 dark:bg-gray-800"
       />
 
       <div
@@ -233,7 +236,7 @@ async function onDragEnd() {
       <div class="flex items-center w-full my-6">
         <!-- Left border -->
         <div
-          class="flex-grow border-t-2 border-gray-500 relative overflow-hidden"
+          class="flex-grow border-t-2 border-gray-500 dark:border-gray-700 relative overflow-hidden"
         ></div>
 
         <!-- Button -->
@@ -248,7 +251,7 @@ async function onDragEnd() {
 
         <!-- Right border -->
         <div
-          class="flex-grow border-t-2 border-gray-500 relative overflow-hidden"
+          class="flex-grow border-t-2 border-gray-500 dark:border-gray-700 relative overflow-hidden"
         ></div>
       </div>
 
@@ -266,7 +269,7 @@ async function onDragEnd() {
       v-model="notes"
       @end="onDragEnd"
       handle=".drag-handle"
-      class="gap-5 gap-y-8 grid grid-cols-2 list-none"
+      class="gap-5 gap-y-8 grid md:grid-cols-2 list-none"
       :item-key="(note: NoteType) => note.id"
     >
       <template #item="{ element: note }">
@@ -275,26 +278,27 @@ async function onDragEnd() {
           class="rounded-2xl bg-gray-200 dark:bg-gray-950 border-white border dark:border-gray-700 p-0.5 h-fit"
         >
           <div
-            class="flex items-start gap-3 rounded-xl p-4 bg-gray-200 dark:bg-gray-900 border-white dark:border-gray-700 border h-96 overflow-scroll"
+            class="note-content relative flex items-start gap-3 rounded-xl p-4 bg-slate-100 dark:bg-gray-900 border-white dark:border-gray-700 border h-96 overflow-y-scroll"
           >
-            <!-- Drag handle -->
-            <div
-              class="drag-handle cursor-move text-gray-500 hover:text-gray-300 mt-1"
-              title="Drag to reorder"
-            >
-              ⋮⋮
+            <div class="absolute top-2 right-3.5 flex gap-2">
+              <!-- Edit button -->
+              <button
+                @click="startEditing(note.id)"
+                v-if="editingId !== note.id"
+                class="mt-1 p-1 text-gray-500 hover:text-gray-700"
+              >
+                <Pencil :size="16" />
+              </button>
+              <!-- Drag handle -->
+              <div
+                class="drag-handle cursor-move text-gray-500 hover:text-gray-300 mt-1"
+                title="Drag to reorder"
+              >
+                ⋮⋮
+              </div>
             </div>
 
-            <!-- Edit button -->
-            <button
-              @click="startEditing(note.id)"
-              v-if="editingId !== note.id"
-              class="mt-1 p-1 text-gray-500 hover:text-gray-700"
-            >
-              <Pencil :size="16" />
-            </button>
-
-            <div class="flex-1">
+            <div class="flex-1 px-3.5">
               <!-- View mode -->
               <div v-if="editingId !== note.id">
                 <h3
@@ -331,7 +335,7 @@ async function onDragEnd() {
                 <input
                   v-model="note.title"
                   placeholder="Title"
-                  class="border-2 border-gray-500 bg-white dark:bg-gray-950 rounded-2xl h-8 px-3 mb-3 w-full"
+                  class="border-2 border-gray-500 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-2xl h-8 px-3 mb-3 w-full"
                 />
 
                 <!-- Block editor -->
@@ -359,7 +363,7 @@ async function onDragEnd() {
                 <div class="flex items-center w-full my-6">
                   <!-- Left border -->
                   <div
-                    class="flex-grow border-t-2 border-gray-500 relative overflow-hidden"
+                    class="flex-grow border-t-2 border-gray-500 dark:border-gray-700 relative overflow-hidden"
                   ></div>
 
                   <!-- Button -->
@@ -374,7 +378,7 @@ async function onDragEnd() {
 
                   <!-- Right border -->
                   <div
-                    class="flex-grow border-t-2 border-gray-500 relative overflow-hidden"
+                    class="flex-grow border-t-2 border-gray-500 dark:border-gray-700 relative overflow-hidden"
                   ></div>
                 </div>
                 <Location v-model="note.location" />

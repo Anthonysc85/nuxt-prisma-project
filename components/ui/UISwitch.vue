@@ -12,7 +12,7 @@ defineEmits<{
 <template>
   <SwitchRoot
     :model-value="modelValue"
-    class="data-[state=checked]:bg-cyan-500/50 dark:bg-charcoal-light relative h-5 w-10 cursor-pointer rounded-full bg-gray-200 transition-colors"
+    class="data-[state=checked]:bg-cyan-500/50 dark:bg-charcoal-light relative h-5 w-10 cursor-pointer rounded-full bg-slate-200 transition-colors"
     @update:model-value="$emit('update:modelValue', $event)"
   >
     <SwitchThumb

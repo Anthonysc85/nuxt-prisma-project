@@ -180,7 +180,7 @@ onUnmounted(() => {
         <input
           v-model="search"
           placeholder="Search location"
-          class="border-3 rounded-2xl border-gray-500 px-2 py-1 w-full"
+          class="border-2 bg-slate-200 dark:bg-gray-800 rounded-2xl border-slate-400 dark:border-gray-700 px-2 py-1 w-full"
         />
 
         <button
