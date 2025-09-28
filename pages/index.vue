@@ -208,7 +208,7 @@ async function onDragEnd() {
       <input
         v-model="newNote.title"
         placeholder="Title"
-        class="border-2 border-gray-500 rounded-2xl h-8 px-3 w-1/2"
+        class="border-2 border-gray-500 rounded-2xl h-8 px-3 w-1/2 dark:bg-gray-900"
       />
 
       <div
@@ -221,7 +221,7 @@ async function onDragEnd() {
             <div class="relative inline-block w-48 mb-3">
               <select
                 v-model="block.type"
-                class="block appearance-none w-full border-2 border-gray-500 rounded-2xl px-4 py-1 pr-10 dark:text-gray-200"
+                class="block appearance-none w-full border-2 border-gray-500 rounded-2xl px-4 py-1 pr-10 dark:text-gray-200 dark:bg-gray-900"
               >
                 <option id="paragraph" value="paragraph">Paragraph</option>
                 <option id="list" value="list">List</option>
@@ -249,7 +249,7 @@ async function onDragEnd() {
             <textarea
               v-model="block.text"
               rows="2"
-              class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y h-32"
+              class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y h-32 dark:bg-gray-900"
               placeholder="Write here..."
             ></textarea>
           </div>
@@ -265,18 +265,26 @@ async function onDragEnd() {
           </button>
         </div>
       </div>
-      <div class="flex items-center w-full">
-        <div class="flex-grow border-t-2 border-gray-500"></div>
+      <div class="flex items-center w-full my-6">
+        <!-- Left border -->
+        <div
+          class="flex-grow border-t-2 border-gray-500 relative overflow-hidden"
+        ></div>
 
+        <!-- Button -->
         <button
           type="button"
           @click="addBlock(newNote.content)"
-          class="mx-4 px-2 py-1 bg-gray-900 text-white rounded flex items-center gap-1"
+          class="mx-4 px-2 py-1 bg-gray-900 text-white rounded flex items-center gap-1 relative overflow-hidden"
         >
           <Plus :size="16" />
+          <div class="shine"></div>
         </button>
 
-        <div class="flex-grow border-t-2 border-gray-500"></div>
+        <!-- Right border -->
+        <div
+          class="flex-grow border-t-2 border-gray-500 relative overflow-hidden"
+        ></div>
       </div>
 
       <Location v-model="newNoteLocation" />
@@ -425,21 +433,27 @@ async function onDragEnd() {
                     </button>
                   </div>
                 </div>
-
                 <div class="flex items-center w-full my-6">
-                  <div class="flex-grow border-t-2 border-gray-500"></div>
+                  <!-- Left border -->
+                  <div
+                    class="flex-grow border-t-2 border-gray-500 relative overflow-hidden"
+                  ></div>
 
+                  <!-- Button -->
                   <button
                     type="button"
                     @click="addBlock(note.content)"
-                    class="mx-4 px-2 py-1 bg-gray-950 text-white rounded flex items-center gap-1"
+                    class="mx-4 px-2 py-1 bg-gray-950 text-white rounded flex items-center gap-1 relative overflow-hidden"
                   >
                     <Plus :size="16" />
+                    <div class="shine"></div>
                   </button>
 
-                  <div class="flex-grow border-t-2 border-gray-500"></div>
+                  <!-- Right border -->
+                  <div
+                    class="flex-grow border-t-2 border-gray-500 relative overflow-hidden"
+                  ></div>
                 </div>
-
                 <Location v-model="note.location" />
 
                 <div class="flex gap-2">
@@ -478,3 +492,37 @@ async function onDragEnd() {
     <p>Redirecting to login...</p>
   </div>
 </template>
+
+<style>
+/* Common shimmer */
+.shine {
+  position: absolute;
+  top: 0;
+  left: -70%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+/* Trigger on hover of the parent element */
+.flex-grow:hover .shine,
+button:hover .shine {
+  animation: shineSweep 0.8s forwards;
+}
+
+@keyframes shineSweep {
+  0% {
+    left: -50%;
+  }
+  100% {
+    left: 120%;
+  }
+}
+</style>
