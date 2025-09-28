@@ -1,14 +1,25 @@
+// server/api/auth/signout.ts
 import { auth } from "~/auth";
-import { defineEventHandler, readBody } from "h3";
+import { parse } from "cookie";
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
-  const { sessionToken } = body;
-
   try {
-    await auth.deleteSession(sessionToken);
+    const cookie = event.node.req.headers.cookie;
+    const sessionToken = parse(cookie || "").sessionToken;
+
+    if (sessionToken) {
+      await auth.deleteSession(sessionToken);
+    }
+
+    // Clear the cookie
+    event.node.res.setHeader(
+      "Set-Cookie",
+      `sessionToken=; Path=/; HttpOnly; Max-Age=0; SameSite=Lax`
+    );
+
     return { success: true };
   } catch (err: any) {
+    console.error(err);
     return { error: err.message || "Signout failed" };
   }
 });

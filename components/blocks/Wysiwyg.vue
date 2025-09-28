@@ -11,6 +11,7 @@ import {
   Italic,
   Underline,
   Strikethrough,
+  Link,
   List,
   ListOrdered,
 } from "lucide-vue-next";
@@ -26,35 +27,68 @@ const activeStates = ref({
   italic: false,
   underline: false,
   strikethrough: false,
+  link: false,
   unorderedList: false,
   orderedList: false,
 });
 
-// Initialize editor content from modelValue
+// Initialize editor content
 onMounted(() => {
-  if (editor.value && props.modelValue) {
+  if (editor.value && props.modelValue)
     editor.value.innerHTML = props.modelValue;
-  }
+  document.addEventListener("selectionchange", updateActiveStates);
 });
 
-// Watch for external changes to modelValue
+// Watch for external model changes
 watch(
   () => props.modelValue,
   (val) => {
-    if (editor.value && editor.value.innerHTML !== val) {
+    if (editor.value && editor.value.innerHTML !== val)
       editor.value.innerHTML = val || "";
-    }
   }
 );
 
-// Apply formatting
-function exec(command: string, value: string | null = null) {
+// Apply formatting or create link
+function exec(command: string) {
   if (!editor.value) return;
-
   editor.value.focus();
-  document.execCommand(command, false, value);
 
-  // Fix list styles
+  if (command === "createLink") {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed) return; // require selected text
+
+    let url = prompt("Enter the link URL", "https://");
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) url = "http://" + url;
+
+    document.execCommand("createLink", false, url); // wrap selected text
+  } else {
+    document.execCommand(command, false, null);
+  }
+
+  fixLists();
+  updateActiveStates();
+  emitChange();
+}
+
+// Update active toolbar button states
+function updateActiveStates() {
+  activeStates.value.bold = document.queryCommandState("bold");
+  activeStates.value.italic = document.queryCommandState("italic");
+  activeStates.value.underline = document.queryCommandState("underline");
+  activeStates.value.strikethrough =
+    document.queryCommandState("strikeThrough");
+  activeStates.value.link = document.queryCommandState("createLink");
+  activeStates.value.unorderedList = document.queryCommandState(
+    "insertUnorderedList"
+  );
+  activeStates.value.orderedList =
+    document.queryCommandState("insertOrderedList");
+}
+
+// Fix list styles
+function fixLists() {
+  if (!editor.value) return;
   const lists = editor.value.querySelectorAll("ul, ol");
   lists.forEach((list) => {
     if (list.tagName === "UL") {
@@ -66,45 +100,80 @@ function exec(command: string, value: string | null = null) {
       (list as HTMLElement).style.paddingLeft = "1.5rem";
     }
   });
+}
 
-  updateActiveStates();
+// Emit HTML to parent
+function emitChange() {
+  if (editor.value) emit("update:modelValue", editor.value.innerHTML);
+}
+
+// Automatically convert typed URLs to links without moving the cursor
+function autoLink(editor: HTMLElement) {
+  const selection = window.getSelection();
+  if (!selection || !editor) return;
+
+  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
+  const urlRegex = /(\bhttps?:\/\/[^\s<>]+[^\s.,;<>])/gi;
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    const parent = node.parentElement;
+
+    if (!parent || parent.tagName === "A") continue;
+
+    const matches = [...node.textContent!.matchAll(urlRegex)];
+    if (!matches.length) continue;
+
+    const frag = document.createDocumentFragment();
+    let lastIndex = 0;
+
+    for (const match of matches) {
+      const [url] = match;
+      const index = match.index!;
+
+      // Add text before the link
+      if (index > lastIndex) {
+        frag.appendChild(
+          document.createTextNode(node.textContent!.slice(lastIndex, index))
+        );
+      }
+
+      // Create the <a> element
+      const a = document.createElement("a");
+      a.href = url;
+      a.textContent = url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      frag.appendChild(a);
+
+      lastIndex = index + url.length;
+    }
+
+    // Add remaining text
+    if (lastIndex < node.textContent!.length) {
+      frag.appendChild(
+        document.createTextNode(node.textContent!.slice(lastIndex))
+      );
+    }
+
+    // Replace the text node with the fragment
+    node.parentNode!.replaceChild(frag, node);
+  }
+
   emitChange();
 }
 
-// Update which buttons are active
-function updateActiveStates() {
-  activeStates.value.bold = document.queryCommandState("bold");
-  activeStates.value.italic = document.queryCommandState("italic");
-  activeStates.value.underline = document.queryCommandState("underline");
-  activeStates.value.strikethrough =
-    document.queryCommandState("strikeThrough");
-  activeStates.value.unorderedList = document.queryCommandState(
-    "insertUnorderedList"
-  );
-  activeStates.value.orderedList =
-    document.queryCommandState("insertOrderedList");
+// Handle input event
+function handleInput() {
+  emitChange();
+  if (editor.value) autoLink(editor.value);
 }
-
-// Emit updated HTML to parent
-function emitChange() {
-  if (editor.value) {
-    emit("update:modelValue", editor.value.innerHTML);
-  }
-}
-
-// Listen to selection changes
-onMounted(() => {
-  document.addEventListener("selectionchange", () => {
-    updateActiveStates();
-  });
-});
 </script>
 
 <template>
   <ToolbarRoot
-    class="flex px-[10px] py-2 w-full !min-w-max rounded-t-lg bg-gray-900 border-t border-x shadow-2xl"
+    class="flex px-[10px] py-2 w-full !min-w-max rounded-t-lg bg-gray-900 border-t border-x shadow-2xl dark:border-gray-700"
   >
-    <!-- Text formatting -->
     <ToolbarToggleGroup type="multiple" aria-label="Text formatting">
       <ToolbarToggleItem
         class="w-8 h-full rounded hover:bg-gray-800"
@@ -141,8 +210,7 @@ onMounted(() => {
 
     <ToolbarSeparator class="w-[1px] bg-gray-200 mx-[10px]" />
 
-    <!-- Lists -->
-    <ToolbarToggleGroup type="multiple" aria-label="Lists & Indent">
+    <ToolbarToggleGroup type="multiple" aria-label="Lists & Links">
       <ToolbarToggleItem
         class="w-8 h-full rounded hover:bg-gray-800"
         :class="activeStates.unorderedList ? 'bg-gray-800 text-white' : ''"
@@ -158,16 +226,23 @@ onMounted(() => {
       >
         <ListOrdered class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
+
+      <ToolbarToggleItem
+        class="w-8 h-full rounded hover:bg-gray-800"
+        :class="activeStates.link ? 'bg-gray-800 text-white' : ''"
+        @click="exec('createLink')"
+      >
+        <Link class="w-[15px] h-[15px] mx-auto text-gray-200" />
+      </ToolbarToggleItem>
     </ToolbarToggleGroup>
   </ToolbarRoot>
 
-  <!-- Editable area -->
   <div
     ref="editor"
     contenteditable="true"
-    class="wysiwyg border-x border-b p-3 min-h-[150px] rounded-b-lg dark:bg-gray-950"
+    class="wysiwyg border-x border-b p-3 min-h-[150px] rounded-b-lg dark:bg-gray-950 dark:border-gray-700"
     spellcheck="true"
-    @input="emitChange"
+    @input="handleInput"
   ></div>
 </template>
 
@@ -194,5 +269,21 @@ onMounted(() => {
 .wysiwyg ul ul,
 .wysiwyg ol ol {
   padding-left: 2rem;
+}
+
+.wysiwyg a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+</style>
+<style>
+.wysiwyg a {
+  color: #006076;
+  text-decoration: underline;
+}
+
+.wysiwyg-content a {
+  color: #006076;
+  text-decoration: underline;
 }
 </style>

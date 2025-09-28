@@ -378,34 +378,34 @@ async function onDragEnd() {
                   ></div>
                 </div>
                 <Location v-model="note.location" />
-
-                <div class="flex gap-2">
+                <div class="flex items-center justify-between mt-4">
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      @click="saveNote(note)"
+                      class="px-3 py-1 bg-cyan text-white rounded hover:bg-cyan-500"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      @click="cancelEditing()"
+                      class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <!-- Delete button -->
                   <button
                     type="button"
-                    @click="saveNote(note)"
-                    class="px-3 py-1 bg-cyan text-white rounded hover:bg-cyan-500"
+                    @click="deleteNote(note)"
+                    class="px-2 py-1 bg-cinnamon-red text-white rounded hover:bg-red-600 self-start"
                   >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    @click="cancelEditing()"
-                    class="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
-                  >
-                    Cancel
+                    Delete
                   </button>
                 </div>
               </div>
             </div>
-
-            <!-- Delete button -->
-            <button
-              type="button"
-              @click="deleteNote(note)"
-              class="px-2 py-1 bg-cinnamon-red text-white rounded hover:bg-red-600 self-start"
-            >
-              Delete
-            </button>
           </div>
         </li>
       </template>
