@@ -5,7 +5,7 @@ import {
   ToolbarToggleGroup,
   ToolbarToggleItem,
 } from "reka-ui";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch, defineProps, defineEmits } from "vue";
 import {
   Bold,
   Italic,
@@ -15,7 +15,9 @@ import {
   ListOrdered,
 } from "lucide-vue-next";
 
-const toggleStateSingle = ref("left");
+const props = defineProps<{ modelValue: string }>();
+const emit = defineEmits<{ (e: "update:modelValue", value: string): void }>();
+
 const editor = ref<HTMLElement | null>(null);
 
 // Track which buttons are active
@@ -27,6 +29,23 @@ const activeStates = ref({
   unorderedList: false,
   orderedList: false,
 });
+
+// Initialize editor content from modelValue
+onMounted(() => {
+  if (editor.value && props.modelValue) {
+    editor.value.innerHTML = props.modelValue;
+  }
+});
+
+// Watch for external changes to modelValue
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (editor.value && editor.value.innerHTML !== val) {
+      editor.value.innerHTML = val || "";
+    }
+  }
+);
 
 // Apply formatting
 function exec(command: string, value: string | null = null) {
@@ -49,6 +68,7 @@ function exec(command: string, value: string | null = null) {
   });
 
   updateActiveStates();
+  emitChange();
 }
 
 // Update which buttons are active
@@ -65,9 +85,18 @@ function updateActiveStates() {
     document.queryCommandState("insertOrderedList");
 }
 
+// Emit updated HTML to parent
+function emitChange() {
+  if (editor.value) {
+    emit("update:modelValue", editor.value.innerHTML);
+  }
+}
+
 // Listen to selection changes
 onMounted(() => {
-  document.addEventListener("selectionchange", updateActiveStates);
+  document.addEventListener("selectionchange", () => {
+    updateActiveStates();
+  });
 });
 </script>
 
@@ -82,7 +111,7 @@ onMounted(() => {
         :class="activeStates.bold ? 'bg-gray-800 text-white' : ''"
         @click="exec('bold')"
       >
-        <Bold class="w-[15px] h-[15px] mx-auto" />
+        <Bold class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
 
       <ToolbarToggleItem
@@ -90,7 +119,7 @@ onMounted(() => {
         :class="activeStates.italic ? 'bg-gray-800 text-white' : ''"
         @click="exec('italic')"
       >
-        <Italic class="w-[15px] h-[15px] mx-auto" />
+        <Italic class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
 
       <ToolbarToggleItem
@@ -98,7 +127,7 @@ onMounted(() => {
         :class="activeStates.underline ? 'bg-gray-800 text-white' : ''"
         @click="exec('underline')"
       >
-        <Underline class="w-[15px] h-[15px] mx-auto" />
+        <Underline class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
 
       <ToolbarToggleItem
@@ -106,11 +135,11 @@ onMounted(() => {
         :class="activeStates.strikethrough ? 'bg-gray-800 text-white' : ''"
         @click="exec('strikeThrough')"
       >
-        <Strikethrough class="w-[15px] h-[15px] mx-auto" />
+        <Strikethrough class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
     </ToolbarToggleGroup>
 
-    <ToolbarSeparator class="w-[1px] bg-mauve6 mx-[10px]" />
+    <ToolbarSeparator class="w-[1px] bg-gray-200 mx-[10px]" />
 
     <!-- Lists -->
     <ToolbarToggleGroup type="multiple" aria-label="Lists & Indent">
@@ -119,7 +148,7 @@ onMounted(() => {
         :class="activeStates.unorderedList ? 'bg-gray-800 text-white' : ''"
         @click="exec('insertUnorderedList')"
       >
-        <List class="w-[15px] h-[15px] mx-auto" />
+        <List class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
 
       <ToolbarToggleItem
@@ -127,7 +156,7 @@ onMounted(() => {
         :class="activeStates.orderedList ? 'bg-gray-800 text-white' : ''"
         @click="exec('insertOrderedList')"
       >
-        <ListOrdered class="w-[15px] h-[15px] mx-auto" />
+        <ListOrdered class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
     </ToolbarToggleGroup>
   </ToolbarRoot>
@@ -136,47 +165,34 @@ onMounted(() => {
   <div
     ref="editor"
     contenteditable="true"
-    class="wysiwyg border-x border-b p-3 min-h-[150px] rounded-b-lg"
+    class="wysiwyg border-x border-b p-3 min-h-[150px] rounded-b-lg dark:bg-gray-950"
     spellcheck="true"
+    @input="emitChange"
   ></div>
 </template>
 
 <style scoped>
-/* Basic styling for the editable area */
-[contenteditable="true"] {
-  outline: none;
-  /* Ensure the content wraps properly */
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  li {
-    list-style-type: disc !important;
-  }
-}
-
-/* Editable area styling */
 .wysiwyg {
   outline: none;
   white-space: pre-wrap;
   word-wrap: break-word;
+  min-height: 150px;
+}
 
-  /* Unordered lists */
-  ul {
-    list-style-type: disc !important;
-    padding-left: 1.5rem; /* add indent */
-    margin: 0.5rem 0;
-  }
+.wysiwyg ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
 
-  /* Ordered lists */
-  ol {
-    list-style-type: decimal !important;
-    padding-left: 1.5rem; /* add indent */
-    margin: 0.5rem 0;
-  }
+.wysiwyg ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
 
-  /* Optional: indent nested lists further */
-  ul ul,
-  ol ol {
-    padding-left: 2rem;
-  }
+.wysiwyg ul ul,
+.wysiwyg ol ol {
+  padding-left: 2rem;
 }
 </style>

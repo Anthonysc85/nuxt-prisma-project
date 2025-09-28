@@ -19,7 +19,6 @@ interface LocationType {
 
 interface NoteBlock {
   id: number;
-  type: "paragraph" | "list";
   text: string;
 }
 
@@ -40,7 +39,7 @@ watchEffect(() => {
 const notes = ref<NoteType[]>([]);
 const newNote = ref<Pick<NoteType, "title" | "content">>({
   title: "",
-  content: [{ id: Date.now(), type: "paragraph", text: "" }],
+  content: [{ id: Date.now(), text: "" }],
 });
 const newNoteLocation = ref<LocationType | null>(null);
 const editingId = ref<number | null>(null);
@@ -58,14 +57,13 @@ async function loadNotes() {
             parsedContent = [
               {
                 id: Date.now(),
-                type: "paragraph",
                 text: String(parsedContent),
               },
             ];
           }
         } catch {
           parsedContent = note.content
-            ? [{ id: Date.now(), type: "paragraph", text: note.content }]
+            ? [{ id: Date.now(), text: note.content }]
             : [];
         }
 
@@ -175,7 +173,7 @@ function deleteBlock(content: NoteBlock[], blockId: number) {
 }
 
 function addBlock(content: NoteBlock[]) {
-  content.push({ id: Date.now(), type: "paragraph", text: "" });
+  content.push({ id: Date.now(), text: "" });
 }
 
 // --- Reorder notes ---
@@ -218,40 +216,7 @@ async function onDragEnd() {
       >
         <div class="flex items-start gap-2">
           <div class="flex-1">
-            <div class="relative inline-block w-48 mb-3">
-              <select
-                v-model="block.type"
-                class="block appearance-none w-full border-2 border-gray-500 rounded-2xl px-4 py-1 pr-10 dark:text-gray-200 dark:bg-gray-900"
-              >
-                <option id="paragraph" value="paragraph">Paragraph</option>
-                <option id="list" value="list">List</option>
-              </select>
-              <!-- Custom chevron -->
-              <div
-                class="pointer-events-none absolute inset-y-0 right-3 flex items-center"
-              >
-                <svg
-                  class="w-5 h-5 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            <textarea
-              v-model="block.text"
-              rows="2"
-              class="border-2 border-gray-500 rounded-2xl px-3 w-full resize-y h-32 dark:bg-gray-900"
-              placeholder="Write here..."
-            ></textarea>
+            <Wysiwyg v-model="block.text" />
           </div>
           <!-- Delete block button (appears on hover) -->
           <button
@@ -340,20 +305,12 @@ async function onDragEnd() {
 
                 <!-- Render blocks -->
                 <div v-for="block in note.content" :key="block.id" class="mb-2">
-                  <p
-                    v-if="block.type === 'paragraph'"
-                    class="whitespace-pre-wrap text-gray-950 dark:text-gray-200"
-                  >
-                    {{ block.text }}
-                  </p>
-                  <ul
-                    v-else-if="block.type === 'list'"
-                    class="list-disc list-inside text-gray-950 dark:text-gray-200"
-                  >
-                    <li v-for="(item, i) in block.text.split('\n')" :key="i">
-                      {{ item }}
-                    </li>
-                  </ul>
+                  <div>
+                    <div
+                      class="wysiwyg-content text-gray-950 dark:text-gray-200"
+                      v-html="block.text"
+                    ></div>
+                  </div>
                 </div>
 
                 <!-- Map preview -->
@@ -385,41 +342,7 @@ async function onDragEnd() {
                 >
                   <div class="flex items-start gap-2">
                     <div class="flex-1">
-                      <div class="relative inline-block w-48 mb-3">
-                        <select
-                          v-model="block.type"
-                          class="block appearance-none w-full border-2 border-gray-500 rounded-2xl px-4 py-1 pr-10 dark:text-gray-200 bg-white dark:bg-gray-950"
-                        >
-                          <option id="paragraph" value="paragraph">
-                            Paragraph
-                          </option>
-                          <option id="list" value="list">List</option>
-                        </select>
-                        <!-- Custom chevron -->
-                        <div
-                          class="pointer-events-none absolute inset-y-0 right-3 flex items-center"
-                        >
-                          <svg
-                            class="w-5 h-5 text-gray-500"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                      <textarea
-                        v-model="block.text"
-                        rows="2"
-                        class="border-2 border-gray-500 rounded-2xl px-3 w-full h-32 resize-y bg-white dark:bg-gray-950"
-                        placeholder="Write here..."
-                      ></textarea>
+                      <Wysiwyg v-model="block.text" />
                     </div>
                     <!-- Delete block button (appears on hover) -->
                     <button
