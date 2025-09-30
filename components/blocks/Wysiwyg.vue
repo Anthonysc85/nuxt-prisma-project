@@ -5,7 +5,14 @@ import {
   ToolbarToggleGroup,
   ToolbarToggleItem,
 } from "reka-ui";
-import { ref, onMounted, watch, defineProps, defineEmits } from "vue";
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  watch,
+  defineProps,
+  defineEmits,
+} from "vue";
 import {
   Bold,
   Italic,
@@ -14,6 +21,8 @@ import {
   Link,
   List,
   ListOrdered,
+  TextQuote,
+  CodeXml,
 } from "lucide-vue-next";
 
 const props = defineProps<{ modelValue: string }>();
@@ -21,7 +30,7 @@ const emit = defineEmits<{ (e: "update:modelValue", value: string): void }>();
 
 const editor = ref<HTMLElement | null>(null);
 
-// Track which buttons are active
+// Track which toolbar buttons are active
 const activeStates = ref({
   bold: false,
   italic: false,
@@ -30,16 +39,19 @@ const activeStates = ref({
   link: false,
   unorderedList: false,
   orderedList: false,
+  blockquote: false,
+  code: false,
 });
 
-// Initialize editor content
+const currentBlock = ref<null | "blockquote" | "pre">(null);
+
 onMounted(() => {
   if (editor.value && props.modelValue)
     editor.value.innerHTML = props.modelValue;
+
   document.addEventListener("selectionchange", updateActiveStates);
 });
 
-// Watch for external model changes
 watch(
   () => props.modelValue,
   (val) => {
@@ -48,30 +60,59 @@ watch(
   }
 );
 
-// Apply formatting or create link
 function exec(command: string) {
   if (!editor.value) return;
   editor.value.focus();
 
   if (command === "createLink") {
     const sel = window.getSelection();
-    if (!sel || sel.isCollapsed) return; // require selected text
+    if (!sel || sel.isCollapsed) return;
 
     let url = prompt("Enter the link URL", "https://");
     if (!url) return;
     if (!/^https?:\/\//i.test(url)) url = "http://" + url;
 
-    document.execCommand("createLink", false, url); // wrap selected text
+    document.execCommand("createLink", false, url);
   } else {
     document.execCommand(command, false, null);
   }
 
-  fixLists();
   updateActiveStates();
   emitChange();
 }
 
-// Update active toolbar button states
+// Toggle block type (for selected text or future typing)
+function toggleBlock(tag: "blockquote" | "pre") {
+  if (!editor.value) return;
+  editor.value.focus();
+
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+
+  const parentTag = getParentBlockTag(sel.getRangeAt(0).startContainer);
+
+  if (parentTag === tag) {
+    document.execCommand("formatBlock", false, "p");
+    currentBlock.value = null;
+  } else {
+    document.execCommand("formatBlock", false, tag);
+    currentBlock.value = tag;
+  }
+
+  updateActiveStates();
+}
+
+function getParentBlockTag(node: Node): string | null {
+  let el: HTMLElement | null =
+    node.nodeType === 3 ? node.parentElement : (node as HTMLElement);
+  while (el && el !== editor.value) {
+    const tag = el.tagName.toLowerCase();
+    if (["p", "pre", "blockquote"].includes(tag)) return tag;
+    el = el.parentElement;
+  }
+  return null;
+}
+
 function updateActiveStates() {
   activeStates.value.bold = document.queryCommandState("bold");
   activeStates.value.italic = document.queryCommandState("italic");
@@ -84,89 +125,126 @@ function updateActiveStates() {
   );
   activeStates.value.orderedList =
     document.queryCommandState("insertOrderedList");
-}
 
-// Fix list styles
-function fixLists() {
+  // Block type under cursor
   if (!editor.value) return;
-  const lists = editor.value.querySelectorAll("ul, ol");
-  lists.forEach((list) => {
-    if (list.tagName === "UL") {
-      (list as HTMLElement).style.listStyleType = "disc";
-      (list as HTMLElement).style.paddingLeft = "1.5rem";
-    }
-    if (list.tagName === "OL") {
-      (list as HTMLElement).style.listStyleType = "decimal";
-      (list as HTMLElement).style.paddingLeft = "1.5rem";
-    }
-  });
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const tag = getParentBlockTag(sel.getRangeAt(0).startContainer);
+
+  activeStates.value.blockquote = tag === "blockquote";
+  activeStates.value.code = tag === "pre";
 }
 
-// Emit HTML to parent
-function emitChange() {
-  if (editor.value) emit("update:modelValue", editor.value.innerHTML);
+// helper: find enclosing <pre> for a given node
+function findClosestPre(node: Node | null): HTMLPreElement | null {
+  let el =
+    node &&
+    (node.nodeType === 3
+      ? (node.parentElement as HTMLElement)
+      : (node as HTMLElement));
+  while (el && el !== editor.value) {
+    if (el.tagName && el.tagName.toLowerCase() === "pre")
+      return el as HTMLPreElement;
+    el = el.parentElement as HTMLElement | null;
+  }
+  return null;
 }
 
-// Automatically convert typed URLs to links without moving the cursor
-function autoLink(editor: HTMLElement) {
-  const selection = window.getSelection();
-  if (!selection || !editor) return;
+// helper: true if caret (collapsed selection) is at very end of the pre
+function isCaretAtEndOfPre(pre: HTMLElement, range: Range): boolean {
+  if (!range.collapsed) return false;
+  const r = document.createRange();
+  try {
+    r.setStart(range.endContainer, range.endOffset);
+    r.setEndAfter(pre);
+    return r.toString().length === 0;
+  } catch (err) {
+    return false;
+  }
+}
 
-  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, null);
-  const urlRegex = /(\bhttps?:\/\/[^\s<>]+[^\s.,;<>])/gi;
+function handleEditorKeydown(e: KeyboardEvent) {
+  if (!editor.value) return;
 
-  while (walker.nextNode()) {
-    const node = walker.currentNode as Text;
-    const parent = node.parentElement;
+  // keep Shift+Enter behaviour intact (do not exit on shift+enter)
+  if (e.key !== "Enter" || (e as KeyboardEvent).shiftKey) return;
 
-    if (!parent || parent.tagName === "A") continue;
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return;
+  const range = sel.getRangeAt(0);
+  const pre = findClosestPre(range.startContainer);
 
-    const matches = [...node.textContent!.matchAll(urlRegex)];
-    if (!matches.length) continue;
+  // if not in a pre, normal enter behavior
+  if (!pre) return;
 
-    const frag = document.createDocumentFragment();
-    let lastIndex = 0;
+  // if selection is not collapsed, let browser handle (or you can implement replacement logic)
+  if (!sel.isCollapsed) return;
 
-    for (const match of matches) {
-      const [url] = match;
-      const index = match.index!;
+  // only prevent default if caret is at the very end of the pre
+  if (isCaretAtEndOfPre(pre, range)) {
+    e.preventDefault();
 
-      // Add text before the link
-      if (index > lastIndex) {
-        frag.appendChild(
-          document.createTextNode(node.textContent!.slice(lastIndex, index))
-        );
-      }
+    // insert an empty paragraph after the pre and move caret there
+    const p = document.createElement("p");
+    p.innerHTML = "<br>";
+    pre.insertAdjacentElement("afterend", p);
 
-      // Create the <a> element
-      const a = document.createElement("a");
-      a.href = url;
-      a.textContent = url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      frag.appendChild(a);
+    const newRange = document.createRange();
+    newRange.setStart(p, 0);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
 
-      lastIndex = index + url.length;
+    // update vue model
+    emitChange();
+  }
+}
+
+// click-outside handler: ensure there is a paragraph after the last <pre>
+function handleDocumentClick(e: MouseEvent) {
+  if (!editor.value) return;
+  const target = e.target as Node;
+  if (editor.value.contains(target)) return; // clicked inside - ignore
+
+  const pres = editor.value.querySelectorAll("pre");
+  if (pres.length) {
+    const lastPre = pres[pres.length - 1] as HTMLElement;
+    const nextEl = lastPre.nextElementSibling;
+    if (!nextEl || nextEl.tagName.toLowerCase() !== "p") {
+      const p = document.createElement("p");
+      p.innerHTML = "<br>";
+      lastPre.insertAdjacentElement("afterend", p);
+      emitChange();
     }
-
-    // Add remaining text
-    if (lastIndex < node.textContent!.length) {
-      frag.appendChild(
-        document.createTextNode(node.textContent!.slice(lastIndex))
-      );
-    }
-
-    // Replace the text node with the fragment
-    node.parentNode!.replaceChild(frag, node);
   }
 
+  // update UI state
+  currentBlock.value = null;
+  updateActiveStates();
+}
+
+onMounted(() => {
+  if (editor.value && props.modelValue)
+    editor.value.innerHTML = props.modelValue;
+
+  document.addEventListener("selectionchange", updateActiveStates);
+  editor.value?.addEventListener("keydown", handleEditorKeydown);
+  document.addEventListener("click", handleDocumentClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("selectionchange", updateActiveStates);
+  editor.value?.removeEventListener("keydown", handleEditorKeydown);
+  document.removeEventListener("click", handleDocumentClick);
+});
+
+function handleInput() {
   emitChange();
 }
 
-// Handle input event
-function handleInput() {
-  emitChange();
-  if (editor.value) autoLink(editor.value);
+function emitChange() {
+  if (editor.value) emit("update:modelValue", editor.value.innerHTML);
 }
 </script>
 
@@ -174,34 +252,32 @@ function handleInput() {
   <ToolbarRoot
     class="flex px-[10px] py-2 w-full !min-w-max rounded-t-lg bg-gray-900 border-t-2 border-x-2 shadow-2xl border-slate-400 dark:border-gray-700"
   >
+    <!-- Formatting buttons -->
     <ToolbarToggleGroup type="multiple" aria-label="Text formatting">
       <ToolbarToggleItem
-        class="w-8 h-full rounded hover:bg-gray-800"
         :class="activeStates.bold ? 'bg-gray-800 text-white' : ''"
+        class="w-8 h-full rounded hover:bg-gray-800"
         @click="exec('bold')"
       >
         <Bold class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
-
       <ToolbarToggleItem
-        class="w-8 h-full rounded hover:bg-gray-800"
         :class="activeStates.italic ? 'bg-gray-800 text-white' : ''"
+        class="w-8 h-full rounded hover:bg-gray-800"
         @click="exec('italic')"
       >
         <Italic class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
-
       <ToolbarToggleItem
-        class="w-8 h-full rounded hover:bg-gray-800"
         :class="activeStates.underline ? 'bg-gray-800 text-white' : ''"
+        class="w-8 h-full rounded hover:bg-gray-800"
         @click="exec('underline')"
       >
         <Underline class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
-
       <ToolbarToggleItem
-        class="w-8 h-full rounded hover:bg-gray-800"
         :class="activeStates.strikethrough ? 'bg-gray-800 text-white' : ''"
+        class="w-8 h-full rounded hover:bg-gray-800"
         @click="exec('strikeThrough')"
       >
         <Strikethrough class="w-[15px] h-[15px] mx-auto text-gray-200" />
@@ -210,29 +286,48 @@ function handleInput() {
 
     <ToolbarSeparator class="w-[1px] bg-gray-200 mx-[10px]" />
 
+    <!-- Lists & Links -->
     <ToolbarToggleGroup type="multiple" aria-label="Lists & Links">
       <ToolbarToggleItem
-        class="w-8 h-full rounded hover:bg-gray-800"
         :class="activeStates.unorderedList ? 'bg-gray-800 text-white' : ''"
+        class="w-8 h-full rounded hover:bg-gray-800"
         @click="exec('insertUnorderedList')"
       >
         <List class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
-
       <ToolbarToggleItem
-        class="w-8 h-full rounded hover:bg-gray-800"
         :class="activeStates.orderedList ? 'bg-gray-800 text-white' : ''"
+        class="w-8 h-full rounded hover:bg-gray-800"
         @click="exec('insertOrderedList')"
       >
         <ListOrdered class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
-
       <ToolbarToggleItem
-        class="w-8 h-full rounded hover:bg-gray-800"
         :class="activeStates.link ? 'bg-gray-800 text-white' : ''"
+        class="w-8 h-full rounded hover:bg-gray-800"
         @click="exec('createLink')"
       >
         <Link class="w-[15px] h-[15px] mx-auto text-gray-200" />
+      </ToolbarToggleItem>
+    </ToolbarToggleGroup>
+
+    <ToolbarSeparator class="w-[1px] bg-gray-200 mx-[10px]" />
+
+    <!-- Block toggles -->
+    <ToolbarToggleGroup type="multiple" aria-label="Blocks">
+      <ToolbarToggleItem
+        :class="activeStates.blockquote ? 'bg-gray-800 text-white' : ''"
+        class="w-8 h-full rounded hover:bg-gray-800"
+        @click="toggleBlock('blockquote')"
+      >
+        <TextQuote class="w-[15px] h-[15px] mx-auto text-gray-200" />
+      </ToolbarToggleItem>
+      <ToolbarToggleItem
+        :class="activeStates.code ? 'bg-gray-800 text-white' : ''"
+        class="w-8 h-full rounded hover:bg-gray-800"
+        @click="toggleBlock('pre')"
+      >
+        <CodeXml class="w-[15px] h-[15px] mx-auto text-gray-200" />
       </ToolbarToggleItem>
     </ToolbarToggleGroup>
   </ToolbarRoot>
@@ -253,37 +348,103 @@ function handleInput() {
   word-wrap: break-word;
   min-height: 150px;
 }
+.wysiwyg ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+.wysiwyg ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+.wysiwyg ul ul,
+.wysiwyg ol ol {
+  padding-left: 2rem;
+}
+.wysiwyg a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.wysiwyg blockquote {
+  border-left: 4px solid #36a3f7;
+  margin: 0;
+  padding-left: 0.75rem;
+  color: #555;
+  font-style: italic;
+  background-color: #f5f8fb;
+}
+</style>
+<style>
+.wysiwyg a {
+  color: #569cd6;
+  text-decoration: underline;
+}
+
+.wysiwyg pre {
+  background-color: #1e2938 !important; /* Slack light gray */
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  width: fit-content;
+  font-family: monospace;
+  white-space: pre-wrap; /* wrap long lines */
+  word-break: break-word;
+  text-wrap-mode: wrap !important;
+  display: block;
+  margin: 0.5rem 0;
+  border: 2px solid #484242;
+}
+
+.wysiwyg pre div {
+  text-wrap-mode: wrap;
+}
+
+.wysiwyg pre span {
+  background-color: transparent !important;
+}
+.wysiwyg pre div {
+  background-color: transparent !important;
+}
+
+.dark .wysiwyg pre {
+  background-color: #1e2938 !important; /* Slack dark mode */
+  color: #fff;
+}
+
+.dark .wysiwyg pre span[style*="color"] {
+  filter: brightness(1.2) contrast(0.9);
+}
+
+.wysiwyg p {
+  background-color: transparent !important;
+}
 
 .wysiwyg ul {
   list-style-type: disc !important;
   padding-left: 1.5rem;
   margin: 0.5rem 0;
 }
-
 .wysiwyg ol {
   list-style-type: decimal !important;
   padding-left: 1.5rem;
   margin: 0.5rem 0;
 }
-
 .wysiwyg ul ul,
 .wysiwyg ol ol {
   padding-left: 2rem;
 }
-
-.wysiwyg a {
-  color: #3b82f6;
-  text-decoration: underline;
-}
-</style>
-<style>
-.wysiwyg a {
-  color: #006076;
-  text-decoration: underline;
+.wysiwyg blockquote {
+  border-left: 4px solid #1e2938;
+  margin: 0;
+  padding-left: 0.75rem;
+  color: #030712 !important;
+  font-style: italic;
 }
 
-.wysiwyg-content a {
-  color: #006076;
-  text-decoration: underline;
+.dark .wysiwyg blockquote {
+  color: #e6e7eb !important;
+  border-left: 4px solid #016176;
 }
 </style>

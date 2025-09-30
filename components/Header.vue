@@ -24,19 +24,23 @@ const logout = async () => {
 
 <template>
   <div
-    class="bg-gray-900 w-full h-12 flex justify-end items-center px-4 space-x-4"
+    class="bg-gray-900 w-full h-12 flex justify-between items-center px-4 space-x-4"
   >
-    <div class="text-gray-200 mr-4">{{ userEmail }}</div>
-    <button
-      @click="logout"
-      class="text-gray-200 hover:bg-gray-700 px-3 py-1 rounded-md text-sm font-medium"
-    >
-      Logout
-    </button>
-    <div class="flex items-center text-gray-200">
-      <MoonIcon :size="16" class="text-gray-200 mr-2" />
-      Dark Mode
+    <div>
+      <pre class="font-bold text-gray-200">ByteSize</pre>
     </div>
-    <UISwitch v-model="isDark" @click.stop />
+    <div class="flex items-center space-x-4">
+      <button
+        @click="logout"
+        class="text-gray-200 hover:bg-gray-700 px-3 py-1 rounded-md text-sm font-medium"
+      >
+        Logout
+      </button>
+      <div class="flex items-center text-gray-200">
+        <MoonIcon :size="16" class="text-gray-200 mr-2" />
+        Dark Mode
+      </div>
+      <UISwitch v-model="isDark" @click.stop />
+    </div>
   </div>
 </template>

@@ -201,7 +201,7 @@ async function onDragEnd() {
 </script>
 
 <template>
-  <div v-if="session" class="px-4 py-6 dark:text-gray-200">
+  <div v-if="session" class="px-4 py-12 dark:text-gray-200">
     <Calendar />
 
     <h1 class="pb-4 text-4xl font-semibold">Notes</h1>
@@ -311,7 +311,7 @@ async function onDragEnd() {
                 <div v-for="block in note.content" :key="block.id" class="mb-2">
                   <div>
                     <div
-                      class="wysiwyg-content text-gray-950 dark:text-gray-200"
+                      class="wysiwyg text-gray-950 dark:text-gray-200"
                       v-html="block.text"
                     ></div>
                   </div>
