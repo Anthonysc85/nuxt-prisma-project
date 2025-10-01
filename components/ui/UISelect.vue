@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
 import {
   SelectContent,
   SelectGroup,
@@ -30,7 +29,7 @@ const options = ["Apple", "Banana", "Blueberry", "Grapes", "Pineapple"];
       aria-label="Customise options"
     >
       <SelectValue placeholder="Select a fruit..." />
-      <Icon icon="radix-icons:chevron-down" class="h-3.5 w-3.5" />
+      <!-- <Icon icon="radix-icons:chevron-down" class="h-3.5 w-3.5" /> -->
     </SelectTrigger>
 
     <SelectPortal>
@@ -41,7 +40,7 @@ const options = ["Apple", "Banana", "Blueberry", "Grapes", "Pineapple"];
         <SelectScrollUpButton
           class="flex items-center justify-center h-[25px] bg-white text-violet11 cursor-default"
         >
-          <Icon icon="radix-icons:chevron-up" />
+          <!-- <Icon icon="radix-icons:chevron-up" /> -->
         </SelectScrollUpButton>
 
         <SelectViewport class="p-[5px]">
@@ -58,7 +57,7 @@ const options = ["Apple", "Banana", "Blueberry", "Grapes", "Pineapple"];
               <SelectItemIndicator
                 class="absolute left-0 w-[25px] inline-flex items-center justify-center"
               >
-                <Icon icon="radix-icons:check" />
+                <!-- <Icon icon="radix-icons:check" /> -->
               </SelectItemIndicator>
               <SelectItemText>
                 {{ option }}
@@ -80,7 +79,7 @@ const options = ["Apple", "Banana", "Blueberry", "Grapes", "Pineapple"];
               <SelectItemIndicator
                 class="absolute left-0 w-[25px] inline-flex items-center justify-center"
               >
-                <Icon icon="radix-icons:check" />
+                <!-- <Icon icon="radix-icons:check" /> -->
               </SelectItemIndicator>
               <SelectItemText>
                 {{ option }}
@@ -92,7 +91,7 @@ const options = ["Apple", "Banana", "Blueberry", "Grapes", "Pineapple"];
         <SelectScrollDownButton
           class="flex items-center justify-center h-[25px] bg-white text-violet11 cursor-default"
         >
-          <Icon icon="radix-icons:chevron-down" />
+          <!-- <Icon icon="radix-icons:chevron-down" /> -->
         </SelectScrollDownButton>
       </SelectContent>
     </SelectPortal>

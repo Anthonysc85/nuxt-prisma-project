@@ -1,0 +1,74 @@
+.wysiwyg {
+  outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  min-height: 150px;
+}
+
+.wysiwyg ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.wysiwyg ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.wysiwyg ul ul,
+.wysiwyg ol ol {
+  padding-left: 2rem;
+}
+
+.wysiwyg a {
+  color: #569cd6;
+  text-decoration: underline;
+}
+
+.wysiwyg blockquote {
+  border-left: 4px solid #016176;
+  margin: 0;
+  padding-left: 0.75rem;
+  color: #e6e7eb !important;
+  font-style: italic;
+  background-color: transparent !important;
+}
+
+.wysiwyg pre {
+  background-color: #1e2938 !important; /* Slack light gray */
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  width: fit-content;
+  font-family: monospace;
+  white-space: pre-wrap; /* wrap long lines */
+  word-break: break-word;
+  text-wrap-mode: wrap !important;
+  display: block;
+  margin: 0.5rem 0;
+  border: 2px solid #484242;
+}
+
+.wysiwyg pre div {
+  text-wrap-mode: wrap;
+  background-color: transparent !important;
+}
+
+.wysiwyg pre span {
+  background-color: transparent !important;
+}
+
+.dark .wysiwyg pre {
+  background-color: #1e2938 !important;
+  color: #fff;
+}
+
+.dark .wysiwyg pre span[style*="color"] {
+  filter: brightness(1.2) contrast(0.9);
+}
+
+.wysiwyg p {
+  background-color: transparent !important;
+}

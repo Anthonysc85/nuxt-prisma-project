@@ -4,7 +4,7 @@ import { useAuth } from "~/composables/useAuth";
 import { ref, watchEffect } from "vue";
 import { useRuntimeConfig } from "#app";
 import { Pencil, Plus } from "lucide-vue-next";
-import Wysiwyg from "../components/blocks/Wysiwyg.vue";
+import Wysiwyg from "../components/Wysiwyg/Wysiwyg.vue";
 import Location from "../components/blocks/LocationMap.vue";
 import Calendar from "../components/blocks/Calendar.vue";
 import VueDraggableNext from "vuedraggable-es";
